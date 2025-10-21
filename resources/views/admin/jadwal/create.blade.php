@@ -109,7 +109,7 @@
             </div>
 
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" onclick="tes()">
                     <i class="fas fa-save"></i> Simpan
                 </button>
                 <a href="{{ route('admin.jadwal.index') }}" class="btn btn-secondary">Batal</a>
@@ -117,4 +117,10 @@
         </form>
     </div>
 </div>
+
+<script>
+    function tes() {
+        console.log(document.getElementById("deadline").value);
+    }
+</script>
 @endsection

@@ -150,7 +150,7 @@ class AdminController extends Controller
         }
 
         $request->validate([
-            'tanggal_selesai' => 'required|datetime|after:today',
+            'tanggal_selesai' => 'required|date_format:Y-m-d\TH:i|after:today',
         ]);
 
         $pendaftaran->update([
@@ -227,7 +227,7 @@ class AdminController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
             'id_orang_tua' => 'required|exists:orang_tua,id_orang_tua',
-            'tanggal_lahir' => 'required|datetime',
+            'tanggal_lahir' => 'required|date_format:Y-m-d\TH:i',
             'jenjang' => 'required|in:SD,SMP',
             'kelas' => 'required|string',
             'telepon' => 'nullable|string',
@@ -281,7 +281,7 @@ class AdminController extends Controller
             'nama_siswa' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $siswa->user_id,
             'id_orang_tua' => 'required|exists:orang_tua,id_orang_tua',
-            'tanggal_lahir' => 'required|datetime',
+            'tanggal_lahir' => 'required|date_format:Y-m-d\TH:i',
             'jenjang' => 'required|in:SD,SMP',
             'kelas' => 'required|string',
             'status' => 'required|in:aktif,non-aktif',
@@ -390,8 +390,8 @@ class AdminController extends Controller
             'jenis' => 'required|in:materi,tugas',
             'file' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,zip|max:10240',
             'durasi' => 'nullable|integer|min:1',
-            'awal' => 'required|datetime',
-            'deadline' => 'nullable|datetime|after:awal',
+            'awal' => 'required|date_format:Y-m-d\TH:i',
+            'deadline' => 'nullable|date_format:Y-m-d\TH:i|after:awal',
         ]);
 
         if ($validator->fails()) {
@@ -451,8 +451,8 @@ class AdminController extends Controller
             'jenis' => 'required|in:materi,tugas',
             'file' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,zip|max:10240',
             'durasi' => 'nullable|integer|min:1',
-            'awal' => 'required|datetime',
-            'deadline' => 'nullable|datetime|after:awal',
+            'awal' => 'required|date_format:Y-m-d\TH:i',
+            'deadline' => 'nullable|date_format:Y-m-d\TH:i|after:awal',
             'status' => 'required|in:pending,selesai,terlambat',
         ]);
 
