@@ -173,12 +173,12 @@
                 <a href="{{ route('admin.informasi.index') }}" class="nav-link {{ request()->routeIs('admin.informasi.*') ? 'active' : '' }}">
                     <i class="fas fa-fw fa-bell"></i> Informasi
                 </a>
-                <a href="{{ route('admin.laporan.index') }}" class="nav-link {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}">
+                <!-- <a href="{{ route('admin.laporan.index') }}" class="nav-link {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}">
                     <i class="fas fa-fw fa-file-alt"></i> Laporan
                 </a>
                 <a href="{{ route('admin.statistik') }}" class="nav-link {{ request()->routeIs('admin.statistik') ? 'active' : '' }}">
                     <i class="fas fa-fw fa-chart-bar"></i> Statistik
-                </a>
+                </a> -->
                 <hr class="bg-white">
                 <a href="{{ route('home') }}" class="nav-link">
                     <i class="fas fa-fw fa-home"></i> Ke Website
