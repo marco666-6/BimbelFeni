@@ -172,14 +172,17 @@ class SiswaController extends Controller
 
         try {
             // Hapus file jawaban lama jika ada
-            if ($tugas->file && Storage::disk('public')->exists('assignments/submissions/' . $tugas->id_jadwal_materi . '_' . basename($tugas->file))) {
-                Storage::disk('public')->delete('assignments/submissions/' . $tugas->id_jadwal_materi . '_' . basename($tugas->file));
+            if ($tugas->file_jawaban && Storage::disk('public')->exists($tugas->file_jawaban)) {
+                Storage::disk('public')->delete($tugas->file_jawaban);
             }
 
-            // Upload file jawaban
+            // Upload file jawaban dengan format: submissions/[id]_[timestamp]_[originalname]
             $file = $request->file('file_jawaban');
-            $filename = $tugas->id_jadwal_materi . '_' . time() . '_' . $file->getClientOriginalName();
-            $file->storeAs('public/assignments/submissions', $filename);
+            $originalName = $file->getClientOriginalName();
+            $filename = $tugas->id_jadwal_materi . '_' . time() . '_' . $originalName;
+            
+            $file->storeAs('assignments/submissions/', $filename, 'public');
+            $filePath = 'assignments/submissions/' . $filename;
 
             // Update deskripsi dengan catatan pengumpulan
             $catatanPengumpulan = "\n\n=== Catatan Pengumpulan ===\n";
@@ -189,6 +192,7 @@ class SiswaController extends Controller
             }
 
             $tugas->update([
+                'file_jawaban' => $filePath,
                 'deskripsi' => ($tugas->deskripsi ?? '') . $catatanPengumpulan,
                 'status' => $tugas->isOverdue() ? 'terlambat' : 'selesai',
             ]);

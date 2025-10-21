@@ -92,10 +92,57 @@
     </div>
 
     <div class="col-lg-4">
+        {{-- File Jawaban Siswa --}}
+        @if($jadwal->jenis == 'tugas')
+            @php
+                // Cek apakah ada file submission
+                $submissionPath = 'assignments/submissions/' . $jadwal->id_jadwal_materi . '_';
+                $submissionFiles = \Illuminate\Support\Facades\Storage::disk('public')->files('assignments/submissions');
+                $studentSubmission = null;
+                foreach($submissionFiles as $file) {
+                    if(str_contains($file, $submissionPath)) {
+                        $studentSubmission = $file;
+                        break;
+                    }
+                }
+            @endphp
+
+            @if($studentSubmission)
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <strong><i class="fas fa-file-upload"></i> File Jawaban Siswa</strong>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> Siswa telah mengumpulkan tugas
+                    </div>
+                    <a href="{{ Storage::url($studentSubmission) }}" target="_blank" class="btn btn-primary w-100 mb-2">
+                        <i class="fas fa-download"></i> Download Jawaban Siswa
+                    </a>
+                    <small class="text-muted d-block">
+                        File: {{ basename($studentSubmission) }}
+                    </small>
+                </div>
+            </div>
+            @else
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <strong><i class="fas fa-exclamation-triangle"></i> Belum Dikumpulkan</strong>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-0">
+                        Siswa belum mengumpulkan tugas ini.
+                    </div>
+                </div>
+            </div>
+            @endif
+        @endif
+
+        {{-- Form Input Nilai --}}
         @if($jadwal->jenis == 'tugas' && !$jadwal->nilai)
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">
-                <strong>Input Nilai</strong>
+                <strong><i class="fas fa-star"></i> Input Nilai</strong>
             </div>
             <div class="card-body">
                 <form action="{{ route('admin.jadwal.nilai', $jadwal->id_jadwal_materi) }}" method="POST">
@@ -105,8 +152,8 @@
                         <input type="number" class="form-control" id="nilai" name="nilai" min="0" max="100" required>
                     </div>
                     <div class="mb-3">
-                        <label for="deskripsi" class="form-label">Komentar</label>
-                        <textarea class="form-control" id="deskripsi" name="deskripsi" rows="3"></textarea>
+                        <label for="komentar" class="form-label">Komentar Penilaian</label>
+                        <textarea class="form-control" id="komentar" name="komentar" rows="3" placeholder="Berikan komentar untuk siswa..."></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="fas fa-check"></i> Simpan Nilai
@@ -116,14 +163,39 @@
         </div>
         @endif
 
+        {{-- Nilai yang sudah diberikan --}}
         @if($jadwal->nilai)
         <div class="card">
             <div class="card-header bg-success text-white">
-                <strong>Nilai</strong>
+                <strong><i class="fas fa-check-circle"></i> Nilai</strong>
             </div>
             <div class="card-body text-center">
-                <h1 class="display-3 text-success">{{ $jadwal->nilai }}</h1>
-                <p class="mb-0">Tugas telah dinilai</p>
+                <h1 class="display-3 text-success mb-3">{{ $jadwal->nilai }}</h1>
+                <p class="mb-2"><strong>Tugas telah dinilai</strong></p>
+                
+                {{-- Tampilkan komentar jika ada --}}
+                @if($jadwal->deskripsi && str_contains($jadwal->deskripsi, 'Komentar Guru:'))
+                    @php
+                        $komentarSection = explode('Komentar Guru:', $jadwal->deskripsi);
+                        if(count($komentarSection) > 1) {
+                            $komentar = trim($komentarSection[1]);
+                        }
+                    @endphp
+                    @if(isset($komentar) && $komentar)
+                    <div class="alert alert-light mt-3 text-start">
+                        <small class="text-muted d-block mb-1"><strong>Komentar Guru:</strong></small>
+                        <small>{{ $komentar }}</small>
+                    </div>
+                    @endif
+                @endif
+                
+                <form action="{{ route('admin.jadwal.nilai', $jadwal->id_jadwal_materi) }}" method="POST" class="mt-3">
+                    @csrf
+                    <input type="hidden" name="reset_nilai" value="1">
+                    <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Yakin ingin mengubah nilai?')">
+                        <i class="fas fa-edit"></i> Edit Nilai
+                    </button>
+                </form>
             </div>
         </div>
         @endif

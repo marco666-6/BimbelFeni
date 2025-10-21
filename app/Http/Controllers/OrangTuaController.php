@@ -93,7 +93,7 @@ class OrangTuaController extends Controller
             'nama_siswa' => 'required|string|max:255',
             'email_siswa' => 'required|email|unique:users,email',
             'password_siswa' => 'required|min:6',
-            'tanggal_lahir' => 'required|datetime',
+            'tanggal_lahir' => 'required|date',
             'jenjang' => 'required|in:SD,SMP',
             'kelas' => 'required|string',
             'telepon_siswa' => 'nullable|string',
@@ -239,7 +239,7 @@ class OrangTuaController extends Controller
         $validator = Validator::make($request->all(), [
             'id_siswa' => 'required|exists:siswa,id_siswa',
             'jumlah' => 'required|numeric|min:1000',
-            'tanggal_bayar' => 'required|datetime',
+            'tanggal_bayar' => 'required|date',
             'bukti_bayar' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'keterangan' => 'nullable|string',
         ]);

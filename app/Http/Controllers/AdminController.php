@@ -367,11 +367,29 @@ class AdminController extends Controller
     }
 
     // ============= JADWAL & MATERI =============
-    public function jadwalIndex()
+    public function jadwalIndex(Request $request)
     {
-        $jadwals = JadwalMateri::with('siswa.user')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = JadwalMateri::with('siswa.user');
+
+        // Filter by jenis
+        if ($request->filled('jenis')) {
+            $query->where('jenis', $request->jenis);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by siswa name
+        if ($request->filled('siswa')) {
+            $query->whereHas('siswa', function($q) use ($request) {
+                $q->where('nama_siswa', 'like', '%' . $request->siswa . '%');
+            });
+        }
+
+        $jadwals = $query->orderBy('created_at', 'desc')->get();
+
         return view('admin.jadwal.index', compact('jadwals'));
     }
 
@@ -402,16 +420,17 @@ class AdminController extends Controller
             $data = $request->except('file');
             $data['status'] = 'pending';
 
-            // Handle upload file
+            // Handle upload file dengan nama original + timestamp
             if ($request->hasFile('file')) {
                 $file = $request->file('file');
-                $filename = time() . '_' . $file->getClientOriginalName();
+                $originalName = $file->getClientOriginalName();
+                $filename = time() . '_' . $originalName;
                 
                 if ($request->jenis === 'materi') {
-                    $file->storeAs('public/materials', $filename);
+                    $file->storeAs('materials', $filename, 'public');
                     $data['file'] = 'materials/' . $filename;
                 } else {
-                    $file->storeAs('public/assignments', $filename);
+                    $file->storeAs('assignments', $filename, 'public');
                     $data['file'] = 'assignments/' . $filename;
                 }
             }
@@ -431,6 +450,23 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
         }
+    }
+
+    // Helper method untuk download file
+    public function jadwalDownload($id)
+    {
+        $jadwal = JadwalMateri::findOrFail($id);
+        
+        if (!$jadwal->file || !Storage::disk('public')->exists($jadwal->file)) {
+            return back()->withErrors(['error' => 'File tidak ditemukan']);
+        }
+        
+        // Ambil nama file original dari path
+        $filename = basename($jadwal->file);
+        // Hapus timestamp dari nama file untuk download
+        $originalName = preg_replace('/^\d+_/', '', $filename);
+        
+        return Storage::disk('public')->download($jadwal->file, $originalName);
     }
 
     public function jadwalEdit($id)
@@ -465,19 +501,20 @@ class AdminController extends Controller
 
             // Handle upload file baru
             if ($request->hasFile('file')) {
-                // Hapus file lama
+                // Hapus file lama jika ada
                 if ($jadwal->file && Storage::disk('public')->exists($jadwal->file)) {
                     Storage::disk('public')->delete($jadwal->file);
                 }
-
+                
                 $file = $request->file('file');
-                $filename = time() . '_' . $file->getClientOriginalName();
+                $originalName = $file->getClientOriginalName();
+                $filename = time() . '_' . $originalName;
                 
                 if ($request->jenis === 'materi') {
-                    $file->storeAs('public/materials', $filename);
+                    $file->storeAs('materials', $filename, 'public');
                     $data['file'] = 'materials/' . $filename;
                 } else {
-                    $file->storeAs('public/assignments', $filename);
+                    $file->storeAs('assignments', $filename, 'public');
                     $data['file'] = 'assignments/' . $filename;
                 }
             }
@@ -511,18 +548,42 @@ class AdminController extends Controller
     }
 
     // Input nilai tugas
+    // Input nilai tugas - DIPERBAIKI
     public function inputNilai(Request $request, $id)
     {
         $jadwal = JadwalMateri::findOrFail($id);
 
+        // Cek apakah request untuk reset nilai
+        if ($request->has('reset_nilai')) {
+            $jadwal->update([
+                'nilai' => null,
+                'status' => 'pending',
+            ]);
+            
+            return back()->with('info', 'Nilai berhasil direset. Silakan input nilai baru.');
+        }
+
         $request->validate([
             'nilai' => 'required|integer|min:0|max:100',
-            'deskripsi' => 'nullable|string',
+            'komentar' => 'nullable|string',
         ]);
+
+        // Update nilai dan komentar
+        $deskripsiUpdate = $jadwal->deskripsi ?? '';
+        
+        // Hapus komentar lama jika ada
+        if (str_contains($deskripsiUpdate, "\n\nKomentar Guru:")) {
+            $deskripsiUpdate = explode("\n\nKomentar Guru:", $deskripsiUpdate)[0];
+        }
+        
+        // Tambahkan komentar baru jika ada
+        if ($request->komentar) {
+            $deskripsiUpdate .= "\n\nKomentar Guru: " . $request->komentar;
+        }
 
         $jadwal->update([
             'nilai' => $request->nilai,
-            'deskripsi' => ($jadwal->deskripsi ?? '') . "\n\nKomentar Guru: " . $request->deskripsi,
+            'deskripsi' => $deskripsiUpdate,
             'status' => 'selesai',
         ]);
 
