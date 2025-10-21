@@ -127,14 +127,20 @@
             <div class="card-body">
                 <form action="{{ route('admin.pendaftaran.approve', $pendaftaran->id_pendaftaran) }}" method="POST">
                     @csrf
-                    <div class="mb-3">
-                        <label for="tanggal_selesai" class="form-label">Tanggal Selesai <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai" 
-                               min="{{ date('Y-m-d', strtotime('+1 day')) }}" required>
+                    
+                    {{-- Info otomatis tanggal selesai --}}
+                    <div class="alert alert-info mb-3">
+                        <small>
+                            <i class="fas fa-info-circle"></i> 
+                            Masa aktif akan dihitung otomatis: <strong>{{ $pendaftaran->paketBelajar->durasi }} bulan</strong>
+                            <br>
+                            Tanggal selesai: <strong>{{ \Carbon\Carbon::now()->addMonths($pendaftaran->paketBelajar->durasi)->format('d F Y') }}</strong>
+                        </small>
                     </div>
+
                     <div class="mb-3">
                         <label for="catatan" class="form-label">Catatan</label>
-                        <textarea class="form-control" id="catatan" name="catatan" rows="3"></textarea>
+                        <textarea class="form-control" id="catatan" name="catatan" rows="3" placeholder="Tambahkan catatan jika diperlukan..."></textarea>
                     </div>
                     <button type="submit" class="btn btn-success w-100" onclick="return confirm('Setujui pendaftaran ini?')">
                         <i class="fas fa-check"></i> Setujui
@@ -152,7 +158,7 @@
                     @csrf
                     <div class="mb-3">
                         <label for="catatan_tolak" class="form-label">Alasan Penolakan <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="catatan_tolak" name="catatan" rows="3" required></textarea>
+                        <textarea class="form-control" id="catatan_tolak" name="catatan" rows="3" required placeholder="Berikan alasan penolakan..."></textarea>
                     </div>
                     <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Tolak pendaftaran ini?')">
                         <i class="fas fa-times"></i> Tolak
