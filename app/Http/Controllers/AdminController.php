@@ -149,13 +149,12 @@ class AdminController extends Controller
             return back()->withErrors(['error' => 'Pendaftaran ini sudah diproses']);
         }
 
-        $request->validate([
-            'tanggal_selesai' => 'required|date_format:Y-m-d\TH:i|after:today',
-        ]);
+        // Hitung tanggal selesai otomatis berdasarkan durasi paket (dalam bulan)
+        $tanggalSelesai = now()->addMonths($pendaftaran->paketBelajar->durasi);
 
         $pendaftaran->update([
             'status' => 'diterima',
-            'tanggal_selesai' => $request->tanggal_selesai,
+            'tanggal_selesai' => $tanggalSelesai,
             'catatan' => $request->catatan,
         ]);
 
@@ -169,11 +168,11 @@ class AdminController extends Controller
             'id_siswa' => $pendaftaran->id_siswa,
             'id_pengguna' => auth()->id(),
             'judul' => 'Pendaftaran Diterima',
-            'isi' => 'Selamat! Pendaftaran Anda untuk paket "' . $pendaftaran->paketBelajar->nama_paket . '" telah diterima.',
+            'isi' => 'Selamat! Pendaftaran Anda untuk paket "' . $pendaftaran->paketBelajar->nama_paket . '" telah diterima. Masa aktif sampai ' . $tanggalSelesai->format('d F Y') . '.',
             'jenis' => 'notifikasi',
         ]);
 
-        return redirect()->route('admin.pendaftaran.index')->with('success', 'Pendaftaran berhasil disetujui');
+        return redirect()->route('admin.pendaftaran.index')->with('success', 'Pendaftaran berhasil disetujui. Masa aktif sampai ' . $tanggalSelesai->format('d F Y'));
     }
 
     public function pendaftaranReject(Request $request, $id)
