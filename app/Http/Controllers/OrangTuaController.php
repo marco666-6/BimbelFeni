@@ -243,35 +243,38 @@ class OrangTuaController extends Controller
             'bukti_bayar' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'keterangan' => 'nullable|string',
         ]);
-
+        
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
-
+        
         try {
             $orangTua = Auth::user()->orangTua;
-
+            
             // Validasi siswa milik orang tua ini
             if (!$orangTua->siswa()->where('id_siswa', $request->id_siswa)->exists()) {
                 return back()->withErrors(['error' => 'Siswa tidak valid']);
             }
-
+            
             $data = $request->except('bukti_bayar');
             $data['id_orang_tua'] = $orangTua->id_orang_tua;
             $data['status'] = 'menunggu';
-
+            
             // Handle upload bukti bayar
             if ($request->hasFile('bukti_bayar')) {
                 $file = $request->file('bukti_bayar');
                 $filename = time() . '_' . $orangTua->id_orang_tua . '_' . $file->getClientOriginalName();
-                $file->storeAs('public/payments', $filename);
+                
+                // Fix: Use the same pattern as jadwalStore
+                $file->storeAs('payments', $filename, 'public');
                 $data['bukti_bayar_path'] = 'payments/' . $filename;
             }
-
+            
             Transaksi::create($data);
-
+            
             return redirect()->route('orangtua.transaksi.index')
                 ->with('success', 'Bukti pembayaran berhasil diunggah. Silakan tunggu verifikasi dari admin.');
+                
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
         }
