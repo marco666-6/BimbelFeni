@@ -4,120 +4,127 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Transaksi extends Model
 {
     use HasFactory;
 
     protected $table = 'transaksi';
-    protected $primaryKey = 'id_transaksi';
-    public $incrementing = true;
 
     protected $fillable = [
-        'id_orang_tua',
-        'id_siswa',
-        'jumlah',
-        'tanggal_bayar',
-        'bukti_bayar_path',
-        'status',
-        'keterangan',
-        'diverifikasi_pada',
+        'kode_transaksi',
+        'orangtua_id',
+        'siswa_id',
+        'paket_id',
+        'total_pembayaran',
+        'bukti_pembayaran',
+        'status_verifikasi',
+        'catatan_admin',
+        'tanggal_transaksi',
     ];
 
     protected $casts = [
-        'tanggal_bayar' => 'datetime',
-        'jumlah' => 'float',
+        'total_pembayaran' => 'float',
+        'tanggal_transaksi' => 'datetime',
     ];
 
-    // Relationships
+    // Generate kode transaksi otomatis
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($transaksi) {
+            if (empty($transaksi->kode_transaksi)) {
+                $transaksi->kode_transaksi = 'TRX' . date('Ymd') . Str::upper(Str::random(6));
+            }
+        });
+    }
+
+    // Relasi Many-to-One dengan OrangTua
     public function orangTua()
     {
-        return $this->belongsTo(OrangTua::class, 'id_orang_tua', 'id_orang_tua');
+        return $this->belongsTo(OrangTua::class, 'orangtua_id');
     }
 
+    // Relasi Many-to-One dengan Siswa
     public function siswa()
     {
-        return $this->belongsTo(Siswa::class, 'id_siswa', 'id_siswa');
+        return $this->belongsTo(Siswa::class, 'siswa_id');
     }
 
-    // Status Check Methods
-    public function isMenunggu()
+    // Relasi Many-to-One dengan PaketBelajar
+    public function paketBelajar()
     {
-        return $this->status === 'menunggu';
+        return $this->belongsTo(PaketBelajar::class, 'paket_id');
     }
 
-    public function isDiverifikasi()
+    // Get bukti pembayaran URL
+    public function getBuktiPembayaranUrlAttribute()
     {
-        return $this->status === 'diverifikasi';
-    }
-
-    public function isDitolak()
-    {
-        return $this->status === 'ditolak';
-    }
-
-    // Format Methods
-    public function getFormattedJumlah()
-    {
-        return 'Rp ' . number_format($this->jumlah, 0, ',', '.');
-    }
-
-    public function getTanggalBayarFormatted()
-    {
-        return $this->tanggal_bayar->format('d-m-Y');
-    }
-
-    public function getStatusBadge()
-    {
-        $badges = [
-            'menunggu' => 'warning',
-            'diverifikasi' => 'success',
-            'ditolak' => 'danger',
-        ];
-        return $badges[$this->status] ?? 'secondary';
-    }
-
-    // Query Scopes
-    public function scopeMenunggu($query)
-    {
-        return $query->where('status', 'menunggu');
-    }
-
-    public function scopeDiverifikasi($query)
-    {
-        return $query->where('status', 'diverifikasi');
-    }
-
-    public function scopeDitolak($query)
-    {
-        return $query->where('status', 'ditolak');
-    }
-
-    public function scopeByOrangTua($query, $id_orang_tua)
-    {
-        return $query->where('id_orang_tua', $id_orang_tua);
-    }
-
-    public function scopeBySiswa($query, $id_siswa)
-    {
-        return $query->where('id_siswa', $id_siswa);
-    }
-
-    public function scopeByTanggal($query, $start, $end = null)
-    {
-        $query->where('tanggal_bayar', '>=', $start);
-        if ($end) {
-            $query->where('tanggal_bayar', '<=', $end);
+        if ($this->bukti_pembayaran) {
+            return asset('storage/' . $this->bukti_pembayaran);
         }
-        return $query;
+        return null;
     }
 
-    public function scopeByJumlah($query, $min, $max = null)
+    // Get total pembayaran formatted
+    public function getTotalPembayaranFormattedAttribute()
     {
-        $query->where('jumlah', '>=', $min);
-        if ($max) {
-            $query->where('jumlah', '<=', $max);
-        }
-        return $query;
+        return 'Rp ' . number_format($this->total_pembayaran, 0, ',', '.');
+    }
+
+    // Get status badge color
+    public function getStatusBadgeColorAttribute()
+    {
+        return match($this->status_verifikasi) {
+            'pending' => 'warning',
+            'verified' => 'success',
+            'rejected' => 'danger',
+            default => 'secondary',
+        };
+    }
+
+    // Get status label
+    public function getStatusLabelAttribute()
+    {
+        return match($this->status_verifikasi) {
+            'pending' => 'Menunggu Verifikasi',
+            'verified' => 'Terverifikasi',
+            'rejected' => 'Ditolak',
+            default => 'Tidak Diketahui',
+        };
+    }
+
+    // Check status
+    public function isPending()
+    {
+        return $this->status_verifikasi === 'pending';
+    }
+
+    public function isVerified()
+    {
+        return $this->status_verifikasi === 'verified';
+    }
+
+    public function isRejected()
+    {
+        return $this->status_verifikasi === 'rejected';
+    }
+
+    // Scope untuk filter status
+    public function scopePending($query)
+    {
+        return $query->where('status_verifikasi', 'pending');
+    }
+
+    public function scopeVerified($query)
+    {
+        return $query->where('status_verifikasi', 'verified');
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status_verifikasi', 'rejected');
     }
 }

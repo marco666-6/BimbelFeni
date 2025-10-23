@@ -4,195 +4,126 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Siswa extends Model
 {
     use HasFactory;
 
     protected $table = 'siswa';
-    protected $primaryKey = 'id_siswa';
-    public $incrementing = true;
 
     protected $fillable = [
         'user_id',
-        'id_orang_tua',
-        'nama_siswa',
+        'orangtua_id',
+        'nama_lengkap',
         'tanggal_lahir',
         'jenjang',
         'kelas',
-        'status',
     ];
 
     protected $casts = [
-        'tanggal_lahir' => 'datetime',
+        'tanggal_lahir' => 'date',
     ];
 
-    // Relationships
+    // Relasi Many-to-One dengan User
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class);
     }
 
+    // Relasi Many-to-One dengan OrangTua
     public function orangTua()
     {
-        return $this->belongsTo(OrangTua::class, 'id_orang_tua', 'id_orang_tua');
+        return $this->belongsTo(OrangTua::class, 'orangtua_id');
     }
 
-    public function pendaftaran()
-    {
-        return $this->hasMany(Pendaftaran::class, 'id_siswa', 'id_siswa');
-    }
-
-    public function jadwalMateri()
-    {
-        return $this->hasMany(JadwalMateri::class, 'id_siswa', 'id_siswa');
-    }
-
+    // Relasi One-to-Many dengan Transaksi
     public function transaksi()
     {
-        return $this->hasMany(Transaksi::class, 'id_siswa', 'id_siswa');
+        return $this->hasMany(Transaksi::class, 'siswa_id');
     }
 
-    public function informasi()
+    // Relasi One-to-Many dengan Jadwal
+    public function jadwal()
     {
-        return $this->hasMany(Informasi::class, 'id_siswa', 'id_siswa');
+        return $this->hasMany(Jadwal::class, 'siswa_id');
     }
 
-    public function paketBelajar()
+    // Relasi One-to-Many dengan Kehadiran
+    public function kehadiran()
     {
-        return $this->hasManyThrough(
-            PaketBelajar::class,
-            Pendaftaran::class,
-            'id_siswa',
-            'id_paket',
-            'id_siswa',
-            'id_paket'
-        );
+        return $this->hasMany(Kehadiran::class, 'siswa_id');
     }
 
-    // Status Check Methods
-    public function isAktif()
+    // Relasi One-to-Many dengan PengumpulanTugas
+    public function pengumpulanTugas()
     {
-        return $this->status === 'aktif';
+        return $this->hasMany(PengumpulanTugas::class, 'siswa_id');
     }
 
-    public function isNonAktif()
+    // Relasi One-to-Many dengan Feedback
+    public function feedback()
     {
-        return $this->status === 'non-aktif';
+        return $this->hasMany(Feedback::class, 'siswa_id');
     }
 
-    // Age & Date Methods
-    public function getUmur()
+    // Relasi One-to-Many dengan LogActivity
+    public function logActivity()
     {
-        return $this->tanggal_lahir ? $this->tanggal_lahir->age : null;
+        return $this->hasMany(LogActivity::class, 'siswa_id');
     }
 
-    public function getTanggalLahirFormatted()
+    // Get usia siswa
+    public function getUsiaAttribute()
     {
-        return $this->tanggal_lahir ? $this->tanggal_lahir->format('d-m-Y') : '-';
+        return Carbon::parse($this->tanggal_lahir)->age;
     }
 
-    public function isSD()
+    // Get persentase kehadiran
+    public function getPersentaseKehadiranAttribute()
     {
-        return $this->jenjang === 'SD';
+        $totalKehadiran = $this->kehadiran()->count();
+        if ($totalKehadiran == 0) return 0;
+        
+        $hadir = $this->kehadiran()->where('status', 'hadir')->count();
+        return round(($hadir / $totalKehadiran) * 100, 2);
     }
 
-    public function isSMP()
+    // Get rata-rata nilai
+    public function getRataNilaiAttribute()
     {
-        return $this->jenjang === 'SMP';
-    }
-
-    // Task & Schedule Methods
-    public function getTugasSelesai()
-    {
-        return $this->jadwalMateri()
-            ->where('jenis', 'tugas')
-            ->where('status', 'selesai')
-            ->count();
-    }
-
-    public function getTugasPending()
-    {
-        return $this->jadwalMateri()
-            ->where('jenis', 'tugas')
-            ->where('status', 'pending')
-            ->count();
-    }
-
-    public function getTugasTerlambat()
-    {
-        return $this->jadwalMateri()
-            ->where('jenis', 'tugas')
-            ->where('status', 'terlambat')
-            ->count();
-    }
-
-    public function getMateriCount()
-    {
-        return $this->jadwalMateri()
-            ->where('jenis', 'materi')
-            ->count();
-    }
-
-    public function getNilaiRataRata()
-    {
-        return $this->jadwalMateri()
+        $nilai = $this->pengumpulanTugas()
             ->whereNotNull('nilai')
             ->avg('nilai');
+        
+        return $nilai ? round($nilai, 2) : 0;
     }
 
-    public function getNilaiTertinggi()
+    // Get jumlah tugas terkumpul
+    public function getTotalTugasTerkumpulAttribute()
     {
-        return $this->jadwalMateri()
-            ->whereNotNull('nilai')
-            ->max('nilai');
+        return $this->pengumpulanTugas()->count();
     }
 
-    public function getNilaiTerendah()
+    // Get jumlah tugas tertunda
+    public function getTugasTertundaAttribute()
     {
-        return $this->jadwalMateri()
-            ->whereNotNull('nilai')
-            ->min('nilai');
+        $tugasIds = $this->pengumpulanTugas()->pluck('materi_tugas_id');
+        
+        return MateriTugas::where('tipe', 'tugas')
+            ->where('jenjang', $this->jenjang)
+            ->where('deadline', '>=', now())
+            ->whereNotIn('id', $tugasIds)
+            ->count();
     }
 
-    // Transaction Methods
-    public function getTotalBayar()
+    // Get status pembayaran terakhir
+    public function getStatusPembayaranTerakhirAttribute()
     {
-        return $this->transaksi()
-            ->where('status', 'diverifikasi')
-            ->sum('jumlah');
-    }
-
-    public function getTransaksiPending()
-    {
-        return $this->transaksi()
-            ->where('status', 'menunggu')
-            ->sum('jumlah');
-    }
-
-    // Query Scopes
-    public function scopeByJenjang($query, $jenjang)
-    {
-        return $query->where('jenjang', $jenjang);
-    }
-
-    public function scopeByKelas($query, $kelas)
-    {
-        return $query->where('kelas', $kelas);
-    }
-
-    public function scopeAktif($query)
-    {
-        return $query->where('status', 'aktif');
-    }
-
-    public function scopeNonAktif($query)
-    {
-        return $query->where('status', 'non-aktif');
-    }
-
-    public function scopeByOrangTua($query, $id_orang_tua)
-    {
-        return $query->where('id_orang_tua', $id_orang_tua);
+        $transaksiTerakhir = $this->transaksi()
+            ->latest('tanggal_transaksi')
+            ->first();
+        
+        return $transaksiTerakhir ? $transaksiTerakhir->status_verifikasi : null;
     }
 }

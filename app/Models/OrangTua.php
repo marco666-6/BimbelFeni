@@ -10,127 +10,62 @@ class OrangTua extends Model
     use HasFactory;
 
     protected $table = 'orang_tua';
-    protected $primaryKey = 'id_orang_tua';
-    public $incrementing = true;
 
     protected $fillable = [
         'user_id',
-        'nama_orang_tua',
-        'hubungan',
+        'nama_lengkap',
+        'no_telepon',
+        'alamat',
         'pekerjaan',
     ];
 
-    // Relationships
+    // Relasi Many-to-One dengan User
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class);
     }
 
+    // Relasi One-to-Many dengan Siswa
     public function siswa()
     {
-        return $this->hasMany(Siswa::class, 'id_orang_tua', 'id_orang_tua');
+        return $this->hasMany(Siswa::class, 'orangtua_id');
     }
 
-    public function pendaftaran()
-    {
-        return $this->hasMany(Pendaftaran::class, 'id_orang_tua', 'id_orang_tua');
-    }
-
+    // Relasi One-to-Many dengan Transaksi
     public function transaksi()
     {
-        return $this->hasMany(Transaksi::class, 'id_orang_tua', 'id_orang_tua');
+        return $this->hasMany(Transaksi::class, 'orangtua_id');
     }
 
-    // Count Methods
-    public function getTotalSiswa()
+    // Relasi One-to-Many dengan Feedback
+    public function feedback()
+    {
+        return $this->hasMany(Feedback::class, 'orangtua_id');
+    }
+
+    // Get total anak terdaftar
+    public function getTotalAnakAttribute()
     {
         return $this->siswa()->count();
     }
 
-    public function getSiswaAktif()
+    // Get total transaksi
+    public function getTotalTransaksiAttribute()
     {
-        return $this->siswa()
-            ->where('status', 'aktif')
-            ->count();
+        return $this->transaksi()->count();
     }
 
-    public function getSiswaNonAktif()
+    // Get transaksi yang pending
+    public function getTransaksiPendingAttribute()
     {
-        return $this->siswa()
-            ->where('status', 'non-aktif')
-            ->count();
+        return $this->transaksi()->where('status_verifikasi', 'pending')->count();
     }
 
-    // Pendaftaran Methods
-    public function getPendaftaranMenunggu()
-    {
-        return $this->pendaftaran()
-            ->where('status', 'menunggu')
-            ->count();
-    }
-
-    public function getPendaftaranDiterima()
-    {
-        return $this->pendaftaran()
-            ->where('status', 'diterima')
-            ->count();
-    }
-
-    public function getPendaftaranDitolak()
-    {
-        return $this->pendaftaran()
-            ->where('status', 'ditolak')
-            ->count();
-    }
-
-    // Transaction Methods
-    public function getTotalTransaksi()
+    // Get total pembayaran verified
+    public function getTotalPembayaranVerifiedAttribute()
     {
         return $this->transaksi()
-            ->sum('jumlah');
-    }
-
-    public function getTotalBayarVerifikasi()
-    {
-        return $this->transaksi()
-            ->where('status', 'diverifikasi')
-            ->sum('jumlah');
-    }
-
-    public function getTotalBayarMenunggu()
-    {
-        return $this->transaksi()
-            ->where('status', 'menunggu')
-            ->sum('jumlah');
-    }
-
-    public function getTotalBayarDitolak()
-    {
-        return $this->transaksi()
-            ->where('status', 'ditolak')
-            ->sum('jumlah');
-    }
-
-    public function getTransaksiMenunggu()
-    {
-        return $this->transaksi()
-            ->where('status', 'menunggu')
-            ->count();
-    }
-
-    // Query Scopes
-    public function scopeByNama($query, $nama)
-    {
-        return $query->where('nama_orang_tua', 'like', "%$nama%");
-    }
-
-    public function scopeByPekerjaan($query, $pekerjaan)
-    {
-        return $query->where('pekerjaan', $pekerjaan);
-    }
-
-    public function scopeByHubungan($query, $hubungan)
-    {
-        return $query->where('hubungan', $hubungan);
+            ->where('status_verifikasi', 'verified')
+            ->sum('total_pembayaran');
     }
 }

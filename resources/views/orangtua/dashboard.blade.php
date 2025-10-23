@@ -1,256 +1,154 @@
+<!-- View: orangtua/dashboard.blade.php -->
 @extends('layouts.ortusiswa')
 
 @section('title', 'Dashboard Orang Tua')
+@section('page-title', 'Dashboard')
 
 @section('content')
-<div class="row">
+<!-- Welcome Section -->
+<div class="row mb-4">
     <div class="col-12">
-        <h1 class="h3 mb-4 text-gray-800">Dashboard Orang Tua</h1>
+        <div class="card bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card-body text-white">
+                <h4 class="text-dark">Selamat Datang, {{ $orangTua->nama_lengkap }}! 👋</h4>
+                <p class="mb-0 text-dark">Pantau perkembangan belajar anak Anda dengan mudah</p>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Statistik Cards -->
-<div class="row">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card primary">
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card text-white bg-primary">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Anak</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['total_anak'] }}</div>
+                        <h6 class="mb-1">Total Anak</h6>
+                        <h2 class="mb-0">{{ $totalAnak }}</h2>
                     </div>
-                    <div class="text-primary" style="font-size: 2rem;">
-                        <i class="fas fa-child"></i>
-                    </div>
+                    <i class="bi bi-people fs-1"></i>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card success">
+    <div class="col-md-3">
+        <div class="card stat-card text-white bg-warning">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Anak Aktif</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['anak_aktif'] }}</div>
+                        <h6 class="mb-1">Transaksi Pending</h6>
+                        <h2 class="mb-0">{{ $transaksiPending }}</h2>
                     </div>
-                    <div class="text-success" style="font-size: 2rem;">
-                        <i class="fas fa-user-check"></i>
-                    </div>
+                    <i class="bi bi-clock-history fs-1"></i>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card warning">
+    <div class="col-md-3">
+        <div class="card stat-card text-white bg-info">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pendaftaran Menunggu</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['pendaftaran_menunggu'] }}</div>
+                        <h6 class="mb-1">Feedback Belum Dibalas</h6>
+                        <h2 class="mb-0">{{ $feedbackBelumDibalas }}</h2>
                     </div>
-                    <div class="text-warning" style="font-size: 2rem;">
-                        <i class="fas fa-clock"></i>
-                    </div>
+                    <i class="bi bi-chat-left-text fs-1"></i>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card info">
+    <div class="col-md-3">
+        <div class="card stat-card text-white bg-success">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Transaksi Menunggu</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['transaksi_menunggu'] }}</div>
+                        <h6 class="mb-1">Siswa Aktif</h6>
+                        <h2 class="mb-0">{{ $siswa->where('user.status', 'aktif')->count() }}</h2>
                     </div>
-                    <div class="text-info" style="font-size: 2rem;">
-                        <i class="fas fa-money-bill-wave"></i>
-                    </div>
+                    <i class="bi bi-check-circle fs-1"></i>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <!-- Daftar Anak -->
-    <div class="col-lg-6 mb-4">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-children"></i> Daftar Anak</span>
-                <a href="{{ route('orangtua.pendaftaran.create') }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus"></i> Daftar Baru
-                </a>
-            </div>
-            <div class="card-body">
-                @if($siswas->count() > 0)
-                    <div class="list-group list-group-flush">
-                        @foreach($siswas as $siswa)
-                        <a href="{{ route('orangtua.siswa.show', $siswa->id_siswa) }}" class="list-group-item list-group-item-action">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1">{{ $siswa->nama_siswa }}</h6>
-                                    <small class="text-muted">
-                                        <i class="fas fa-school"></i> {{ $siswa->jenjang }} - Kelas {{ $siswa->kelas }}
-                                    </small>
-                                </div>
-                                <div>
-                                    @if($siswa->status === 'aktif')
-                                        <span class="badge bg-success">Aktif</span>
-                                    @else
-                                        <span class="badge bg-secondary">Non-Aktif</span>
-                                    @endif
-                                </div>
-                            </div>
-                        </a>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="text-center py-4">
-                        <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Belum ada anak terdaftar</p>
-                        <a href="{{ route('orangtua.pendaftaran.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Daftarkan Anak
-                        </a>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
-
-    <!-- Pengumuman Terbaru -->
-    <div class="col-lg-6 mb-4">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-bell"></i> Pengumuman Terbaru</span>
-                <a href="{{ route('orangtua.informasi.index') }}" class="btn btn-sm btn-outline-primary">Lihat Semua</a>
-            </div>
-            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                @if($pengumuman->count() > 0)
-                    <div class="list-group list-group-flush">
-                        @foreach($pengumuman as $info)
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between">
-                                <h6 class="mb-1">{{ $info->judul }}</h6>
-                                <small class="text-muted">{{ $info->created_at->diffForHumans() }}</small>
-                            </div>
-                            <p class="mb-0 text-muted">{{ Str::limit($info->isi, 100) }}</p>
-                        </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="text-center py-4">
-                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Belum ada pengumuman</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Transaksi Terbaru -->
-<div class="row">
+<!-- Data Anak -->
+<div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-receipt"></i> Transaksi Terbaru</span>
-                <div>
-                    <a href="{{ route('orangtua.transaksi.create') }}" class="btn btn-sm btn-success">
-                        <i class="fas fa-upload"></i> Upload Bukti
-                    </a>
-                    <a href="{{ route('orangtua.riwayat-pembayaran') }}" class="btn btn-sm btn-outline-primary">
-                        Lihat Riwayat
-                    </a>
-                </div>
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-people"></i> Data Anak</h5>
+                <a href="{{ route('orangtua.anak') }}" class="btn btn-light btn-sm">Lihat Semua</a>
             </div>
             <div class="card-body">
-                @if($transaksiTerbaru->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Tanggal</th>
-                                    <th>Siswa</th>
-                                    <th>Jumlah</th>
-                                    <th>Status</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($transaksiTerbaru as $transaksi)
-                                <tr>
-                                    <td>{{ $transaksi->tanggal_bayar->format('d M Y') }}</td>
-                                    <td>{{ $transaksi->siswa->nama_siswa ?? '-' }}</td>
-                                    <td>{{ $transaksi->getFormattedJumlah() }}</td>
-                                    <td>
-                                        @if($transaksi->status === 'menunggu')
-                                            <span class="badge bg-warning">Menunggu</span>
-                                        @elseif($transaksi->status === 'diverifikasi')
-                                            <span class="badge bg-success">Diverifikasi</span>
-                                        @else
-                                            <span class="badge bg-danger">Ditolak</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <a href="{{ route('orangtua.transaksi.show', $transaksi->id_transaksi) }}" class="btn btn-sm btn-info">
-                                            <i class="fas fa-eye"></i>
+                <div class="row">
+                    @forelse($siswa as $s)
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <div class="d-flex align-items-start">
+                                    <img src="{{ $s->user->foto_profil_url }}" alt="Foto" class="rounded-circle me-3" width="60" height="60">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ $s->nama_lengkap }}</h6>
+                                        <p class="text-muted mb-2 small">
+                                            <span class="badge bg-info">{{ $s->jenjang }}</span>
+                                            <span class="badge bg-secondary">{{ $s->kelas }}</span>
+                                        </p>
+                                        <div class="row g-4 mb-2">
+                                            <div class="col-6">
+                                                <small class="text-muted">Kehadiran</small>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar bg-success" style="width: {{ $s->persentase_kehadiran }}%">
+                                                        {{ $s->persentase_kehadiran }}%
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">Rata-rata Nilai</small>
+                                                <div class="fs-5 fw-bold text-primary">{{ number_format($s->rata_nilai, 1) }}</div>
+                                            </div>
+                                        </div>
+                                        <a href="{{ route('orangtua.anak.detail', $s->id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Lihat Detail
                                         </a>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                @else
-                    <div class="text-center py-4">
-                        <i class="fas fa-file-invoice fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Belum ada transaksi</p>
+                    @empty
+                    <div class="col-12">
+                        <p class="text-center text-muted">Belum ada data anak terdaftar</p>
                     </div>
-                @endif
+                    @endforelse
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="row mt-4">
+<!-- Pengumuman Terbaru -->
+<div class="row">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
-                <i class="fas fa-bolt"></i> Aksi Cepat
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-megaphone"></i> Pengumuman Terbaru</h5>
+                <a href="{{ route('orangtua.pengumuman') }}" class="btn btn-light btn-sm">Lihat Semua</a>
             </div>
             <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-md-3 mb-3">
-                        <a href="{{ route('orangtua.paket.index') }}" class="btn btn-outline-primary w-100 py-3">
-                            <i class="fas fa-box fa-2x mb-2"></i>
-                            <p class="mb-0">Lihat Paket</p>
-                        </a>
+                @forelse($pengumuman as $p)
+                <div class="border-bottom pb-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="mb-0">{{ $p->judul }}</h6>
+                        <small class="text-muted">{{ $p->tanggal_publikasi_formatted }}</small>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <a href="{{ route('orangtua.jadwal.index') }}" class="btn btn-outline-info w-100 py-3">
-                            <i class="fas fa-calendar fa-2x mb-2"></i>
-                            <p class="mb-0">Jadwal Belajar</p>
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <a href="{{ route('orangtua.feedback.create') }}" class="btn btn-outline-warning w-100 py-3">
-                            <i class="fas fa-comment fa-2x mb-2"></i>
-                            <p class="mb-0">Kirim Feedback</p>
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <a href="{{ route('orangtua.whatsapp') }}" class="btn btn-outline-success w-100 py-3">
-                            <i class="fab fa-whatsapp fa-2x mb-2"></i>
-                            <p class="mb-0">Hubungi Admin</p>
-                        </a>
-                    </div>
+                    <p class="text-muted mb-2">{{ Str::limit($p->isi, 150) }}</p>
+                    <span class="badge bg-{{ $p->target_badge_color }}">{{ $p->target_label }}</span>
                 </div>
+                @empty
+                <p class="text-center text-muted mb-0">Belum ada pengumuman</p>
+                @endforelse
             </div>
         </div>
     </div>

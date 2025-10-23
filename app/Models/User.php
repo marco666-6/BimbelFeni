@@ -12,13 +12,12 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'name',
+        'username',
         'email',
         'password',
         'role',
-        'telepon',
-        'alamat',
         'foto_profil',
+        'status',
     ];
 
     protected $hidden = [
@@ -31,23 +30,31 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    // Relationships
-    public function siswa()
-    {
-        return $this->hasOne(Siswa::class, 'user_id');
-    }
-
+    // Relasi One-to-One dengan OrangTua
     public function orangTua()
     {
-        return $this->hasOne(OrangTua::class, 'user_id');
+        return $this->hasOne(OrangTua::class);
     }
 
-    public function informasi()
+    // Relasi One-to-One dengan Siswa
+    public function siswa()
     {
-        return $this->hasMany(Informasi::class, 'id_pengguna');
+        return $this->hasOne(Siswa::class);
     }
 
-    // Role Check Methods
+    // Relasi One-to-Many dengan Notifikasi
+    public function notifikasi()
+    {
+        return $this->hasMany(Notifikasi::class);
+    }
+
+    // Relasi One-to-Many dengan Pengumuman (sebagai creator)
+    public function pengumumanDibuat()
+    {
+        return $this->hasMany(Pengumuman::class, 'created_by');
+    }
+
+    // Helper methods untuk check role
     public function isAdmin()
     {
         return $this->role === 'admin';
@@ -55,7 +62,7 @@ class User extends Authenticatable
 
     public function isOrangTua()
     {
-        return $this->role === 'orang_tua';
+        return $this->role === 'orangtua';
     }
 
     public function isSiswa()
@@ -63,24 +70,23 @@ class User extends Authenticatable
         return $this->role === 'siswa';
     }
 
-    public function hasRole($role)
+    public function isAktif()
     {
-        return $this->role === $role;
+        return $this->status === 'aktif';
     }
 
-    // Query Methods
-    public function scopeByRole($query, $role)
+    // Get foto profil URL
+    public function getFotoProfilUrlAttribute()
     {
-        return $query->where('role', $role);
+        if ($this->foto_profil) {
+            return asset('storage/' . $this->foto_profil);
+        }
+        return asset('images/no-image.png');
     }
 
-    public function scopeActive($query)
+    // Get notifikasi yang belum dibaca
+    public function getUnreadNotificationsCountAttribute()
     {
-        return $query->whereNotNull('email_verified_at');
-    }
-
-    public function scopeUnverified($query)
-    {
-        return $query->whereNull('email_verified_at');
+        return $this->notifikasi()->where('dibaca', false)->count();
     }
 }

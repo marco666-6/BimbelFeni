@@ -1,828 +1,942 @@
 <?php
-// sides\app\Http\Controllers\AdminController.php
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Siswa;
-use App\Models\OrangTua;
-use App\Models\PaketBelajar;
-use App\Models\Pendaftaran;
-use App\Models\JadwalMateri;
-use App\Models\Transaksi;
-use App\Models\Informasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\User;
+use App\Models\OrangTua;
+use App\Models\Siswa;
+use App\Models\PaketBelajar;
+use App\Models\Transaksi;
+use App\Models\Jadwal;
+use App\Models\Kehadiran;
+use App\Models\MateriTugas;
+use App\Models\PengumpulanTugas;
+use App\Models\Feedback;
+use App\Models\Pengumuman;
+use App\Models\Settings;
+use App\Models\Notifikasi;
+use App\Helpers\FileUploadHelper;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
-    // ============= DASHBOARD =============
+    /**
+     * Dashboard Admin
+     */
     public function dashboard()
     {
-        $stats = [
-            'total_siswa' => Siswa::count(),
-            'siswa_aktif' => Siswa::aktif()->count(),
-            'total_orangtua' => OrangTua::count(),
-            'total_paket' => PaketBelajar::count(),
-            'pendaftaran_menunggu' => Pendaftaran::menunggu()->count(),
-            'transaksi_menunggu' => Transaksi::menunggu()->count(),
-            'total_materi' => JadwalMateri::materi()->count(),
-            'total_tugas' => JadwalMateri::tugas()->count(),
-        ];
-
-        // Data untuk chart
-        $siswaByJenjang = [
-            'SD' => Siswa::byJenjang('SD')->aktif()->count(),
-            'SMP' => Siswa::byJenjang('SMP')->aktif()->count(),
-        ];
-
-        // Pendaftaran terbaru
-        $pendaftaranTerbaru = Pendaftaran::with(['orangTua.user', 'paketBelajar'])
+        $totalSiswa = Siswa::count();
+        $totalOrangTua = OrangTua::count();
+        $totalPaket = PaketBelajar::count();
+        $transaksiPending = Transaksi::pending()->count();
+        $feedbackBaru = Feedback::baru()->count();
+        
+        $recentTransaksi = Transaksi::with(['orangTua', 'siswa', 'paketBelajar'])
+            ->latest()
+            ->take(5)
+            ->get();
+        
+        $recentFeedback = Feedback::with(['orangTua', 'siswa'])
+            ->baru()
             ->latest()
             ->take(5)
             ->get();
 
-        // Transaksi terbaru
-        $transaksiTerbaru = Transaksi::with(['orangTua.user', 'siswa'])
-            ->latest()
-            ->take(5)
-            ->get();
-
-        return view('admin.dashboard', compact('stats', 'siswaByJenjang', 'pendaftaranTerbaru', 'transaksiTerbaru'));
+        return view('admin.dashboard', compact(
+            'totalSiswa',
+            'totalOrangTua',
+            'totalPaket',
+            'transaksiPending',
+            'feedbackBaru',
+            'recentTransaksi',
+            'recentFeedback'
+        ));
     }
 
-    // ============= PAKET BELAJAR =============
-    public function paketIndex()
+    // ============ USER MANAGEMENT ============
+    
+    /**
+     * Kelola Users (Admin, Orang Tua, Siswa)
+     */
+    public function users(Request $request)
     {
-        $pakets = PaketBelajar::withCount('pendaftaran')->orderBy('created_at', 'desc')->get();
-        return view('admin.paket.index', compact('pakets'));
+        $role = $request->get('role', 'all');
+        
+        $query = User::with(['orangTua', 'siswa']);
+        
+        if ($role !== 'all') {
+            $query->where('role', $role);
+        }
+        
+        $users = $query->latest()->get();
+        
+        return view('admin.users', compact('users', 'role'));
     }
 
-    public function paketCreate()
+    /**
+     * Store new user
+     */
+    public function storeUser(Request $request)
     {
-        return view('admin.paket.create');
-    }
-
-    public function paketStore(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'nama_paket' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'harga' => 'required|numeric|min:0',
-            'durasi' => 'required|integer|min:1',
-            'komentar' => 'nullable|string',
+        $request->validate([
+            'username' => 'required|unique:users|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|min:6',
+            'role' => 'required|in:admin,orangtua,siswa',
+            'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
+        $data = $request->only(['username', 'email', 'role']);
+        $data['password'] = Hash::make($request->password);
+        $data['status'] = 'aktif';
+
+        if ($request->hasFile('foto_profil')) {
+            $data['foto_profil'] = FileUploadHelper::uploadFile(
+                $request->file('foto_profil'),
+                'profile_photos'
+            );
         }
+
+        $user = User::create($data);
+
+        return back()->with('success', 'User berhasil ditambahkan!');
+    }
+
+    /**
+     * Update user
+     */
+    public function updateUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $request->validate([
+            'username' => 'required|max:255|unique:users,username,' . $id,
+            'email' => 'required|email|unique:users,email,' . $id,
+            'password' => 'nullable|min:6',
+            'role' => 'required|in:admin,orangtua,siswa',
+            'status' => 'required|in:aktif,nonaktif',
+            'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $data = $request->only(['username', 'email', 'role', 'status']);
+
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        if ($request->hasFile('foto_profil')) {
+            $data['foto_profil'] = FileUploadHelper::uploadFile(
+                $request->file('foto_profil'),
+                'profile_photos',
+                $user->foto_profil
+            );
+        }
+
+        $user->update($data);
+
+        return back()->with('success', 'User berhasil diupdate!');
+    }
+
+    /**
+     * Delete user
+     */
+    public function deleteUser($id)
+    {
+        $user = User::findOrFail($id);
+        
+        if ($user->foto_profil) {
+            FileUploadHelper::deleteFile($user->foto_profil);
+        }
+        
+        $user->delete();
+
+        return back()->with('success', 'User berhasil dihapus!');
+    }
+
+    // ============ ORANG TUA MANAGEMENT ============
+    
+    /**
+     * Kelola Orang Tua Detail
+     */
+    public function orangTua()
+    {
+        $orangTua = OrangTua::with(['user', 'siswa'])->get();
+        $usersOrangTua = User::where('role', 'orangtua')
+            ->whereDoesntHave('orangTua')
+            ->get();
+        
+        return view('admin.orangtua', compact('orangTua', 'usersOrangTua'));
+    }
+
+    /**
+     * Store orang tua
+     */
+    public function storeOrangTua(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'nama_lengkap' => 'required|max:255',
+            'no_telepon' => 'required|max:20',
+            'alamat' => 'required',
+            'pekerjaan' => 'nullable|max:255',
+        ]);
+
+        OrangTua::create($request->all());
+
+        return back()->with('success', 'Data orang tua berhasil ditambahkan!');
+    }
+
+    /**
+     * Update orang tua
+     */
+    public function updateOrangTua(Request $request, $id)
+    {
+        $orangTua = OrangTua::findOrFail($id);
+
+        $request->validate([
+            'nama_lengkap' => 'required|max:255',
+            'no_telepon' => 'required|max:20',
+            'alamat' => 'required',
+            'pekerjaan' => 'nullable|max:255',
+        ]);
+
+        $orangTua->update($request->all());
+
+        return back()->with('success', 'Data orang tua berhasil diupdate!');
+    }
+
+    /**
+     * Delete orang tua
+     */
+    public function deleteOrangTua($id)
+    {
+        $orangTua = OrangTua::findOrFail($id);
+        $orangTua->delete();
+
+        return back()->with('success', 'Data orang tua berhasil dihapus!');
+    }
+
+    // ============ SISWA MANAGEMENT ============
+    
+    /**
+     * Kelola Siswa
+     */
+    public function siswa()
+    {
+        $siswa = Siswa::with(['user', 'orangTua'])->get();
+        $usersSiswa = User::where('role', 'siswa')
+            ->whereDoesntHave('siswa')
+            ->get();
+        $orangTua = OrangTua::all();
+        
+        return view('admin.siswa', compact('siswa', 'usersSiswa', 'orangTua'));
+    }
+
+    /**
+     * Store siswa
+     */
+    public function storeSiswa(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'orangtua_id' => 'required|exists:orang_tua,id',
+            'nama_lengkap' => 'required|max:255',
+            'tanggal_lahir' => 'required|date',
+            'jenjang' => 'required|in:SD,SMP',
+            'kelas' => 'required|max:10',
+        ]);
+
+        Siswa::create($request->all());
+
+        return back()->with('success', 'Data siswa berhasil ditambahkan!');
+    }
+
+    /**
+     * Update siswa
+     */
+    public function updateSiswa(Request $request, $id)
+    {
+        $siswa = Siswa::findOrFail($id);
+
+        $request->validate([
+            'orangtua_id' => 'required|exists:orang_tua,id',
+            'nama_lengkap' => 'required|max:255',
+            'tanggal_lahir' => 'required|date',
+            'jenjang' => 'required|in:SD,SMP',
+            'kelas' => 'required|max:10',
+        ]);
+
+        $siswa->update($request->all());
+
+        return back()->with('success', 'Data siswa berhasil diupdate!');
+    }
+
+    /**
+     * Delete siswa
+     */
+    public function deleteSiswa($id)
+    {
+        $siswa = Siswa::findOrFail($id);
+        $siswa->delete();
+
+        return back()->with('success', 'Data siswa berhasil dihapus!');
+    }
+
+    // ============ PAKET BELAJAR MANAGEMENT ============
+    
+    /**
+     * Kelola Paket Belajar
+     */
+    public function paketBelajar()
+    {
+        $paket = PaketBelajar::withCount('transaksi')->get();
+        
+        return view('admin.paket', compact('paket'));
+    }
+
+    /**
+     * Store paket belajar
+     */
+    public function storePaket(Request $request)
+    {
+        $request->validate([
+            'nama_paket' => 'required|max:255',
+            'deskripsi' => 'required',
+            'harga' => 'required|numeric|min:0',
+            'durasi_bulan' => 'required|integer|min:1',
+            'jenjang' => 'required|in:SD,SMP,SD & SMP',
+            'status' => 'required|in:tersedia,tidak_tersedia',
+        ]);
 
         PaketBelajar::create($request->all());
 
-        return redirect()->route('admin.paket.index')->with('success', 'Paket belajar berhasil ditambahkan');
+        return back()->with('success', 'Paket belajar berhasil ditambahkan!');
     }
 
-    public function paketEdit($id)
+    /**
+     * Update paket belajar
+     */
+    public function updatePaket(Request $request, $id)
     {
         $paket = PaketBelajar::findOrFail($id);
-        return view('admin.paket.edit', compact('paket'));
-    }
 
-    public function paketUpdate(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
-            'nama_paket' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
+        $request->validate([
+            'nama_paket' => 'required|max:255',
+            'deskripsi' => 'required',
             'harga' => 'required|numeric|min:0',
-            'durasi' => 'required|integer|min:1',
-            'komentar' => 'nullable|string',
+            'durasi_bulan' => 'required|integer|min:1',
+            'jenjang' => 'required|in:SD,SMP,SD & SMP',
+            'status' => 'required|in:tersedia,tidak_tersedia',
         ]);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $paket = PaketBelajar::findOrFail($id);
         $paket->update($request->all());
 
-        return redirect()->route('admin.paket.index')->with('success', 'Paket belajar berhasil diperbarui');
+        return back()->with('success', 'Paket belajar berhasil diupdate!');
     }
 
-    public function paketDestroy($id)
+    /**
+     * Delete paket belajar
+     */
+    public function deletePaket($id)
     {
         $paket = PaketBelajar::findOrFail($id);
-        
-        // Cek apakah ada pendaftaran
-        if ($paket->pendaftaran()->count() > 0) {
-            return back()->withErrors(['error' => 'Tidak dapat menghapus paket yang sudah memiliki pendaftaran']);
-        }
-
         $paket->delete();
 
-        return redirect()->route('admin.paket.index')->with('success', 'Paket belajar berhasil dihapus');
+        return back()->with('success', 'Paket belajar berhasil dihapus!');
     }
 
-    // ============= PENDAFTARAN =============
-    public function pendaftaranIndex()
+    // ============ TRANSAKSI & PEMBAYARAN ============
+    
+    /**
+     * Kelola Transaksi
+     */
+    public function transaksi(Request $request)
     {
-        $pendaftarans = Pendaftaran::with(['orangTua.user', 'paketBelajar', 'siswa'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-        return view('admin.pendaftaran.index', compact('pendaftarans'));
-    }
-
-    public function pendaftaranShow($id)
-    {
-        $pendaftaran = Pendaftaran::with(['orangTua.user', 'paketBelajar', 'siswa'])
-            ->findOrFail($id);
-        return view('admin.pendaftaran.show', compact('pendaftaran'));
-    }
-
-    public function pendaftaranApprove(Request $request, $id)
-    {
-        $pendaftaran = Pendaftaran::findOrFail($id);
-
-        if ($pendaftaran->status !== 'menunggu') {
-            return back()->withErrors(['error' => 'Pendaftaran ini sudah diproses']);
+        $status = $request->get('status', 'all');
+        
+        $query = Transaksi::with(['orangTua', 'siswa', 'paketBelajar']);
+        
+        if ($status !== 'all') {
+            $query->where('status_verifikasi', $status);
         }
-
-        // Hitung tanggal selesai otomatis berdasarkan durasi paket (dalam bulan)
-        $tanggalSelesai = now()->addMonths($pendaftaran->paketBelajar->durasi);
-
-        $pendaftaran->update([
-            'status' => 'diterima',
-            'tanggal_selesai' => $tanggalSelesai,
-            'catatan' => $request->catatan,
-        ]);
-
-        // Update status siswa jadi aktif
-        if ($pendaftaran->siswa) {
-            $pendaftaran->siswa->update(['status' => 'aktif']);
-        }
-
-        // Buat notifikasi
-        Informasi::create([
-            'id_siswa' => $pendaftaran->id_siswa,
-            'id_pengguna' => auth()->id(),
-            'judul' => 'Pendaftaran Diterima',
-            'isi' => 'Selamat! Pendaftaran Anda untuk paket "' . $pendaftaran->paketBelajar->nama_paket . '" telah diterima. Masa aktif sampai ' . $tanggalSelesai->format('d F Y') . '.',
-            'jenis' => 'notifikasi',
-        ]);
-
-        return redirect()->route('admin.pendaftaran.index')->with('success', 'Pendaftaran berhasil disetujui. Masa aktif sampai ' . $tanggalSelesai->format('d F Y'));
+        
+        $transaksi = $query->latest()->get();
+        
+        return view('admin.transaksi', compact('transaksi', 'status'));
     }
 
-    public function pendaftaranReject(Request $request, $id)
+    /**
+     * Verifikasi pembayaran
+     */
+    public function verifikasiTransaksi(Request $request, $id)
     {
-        $pendaftaran = Pendaftaran::findOrFail($id);
-
-        if ($pendaftaran->status !== 'menunggu') {
-            return back()->withErrors(['error' => 'Pendaftaran ini sudah diproses']);
-        }
+        $transaksi = Transaksi::findOrFail($id);
 
         $request->validate([
-            'catatan' => 'required|string',
+            'status_verifikasi' => 'required|in:verified,rejected',
+            'catatan_admin' => 'nullable|string',
         ]);
 
-        $pendaftaran->update([
-            'status' => 'ditolak',
-            'catatan' => $request->catatan,
-        ]);
+        $transaksi->update($request->only(['status_verifikasi', 'catatan_admin']));
 
-        // Buat notifikasi
-        Informasi::create([
-            'id_siswa' => $pendaftaran->id_siswa,
-            'id_pengguna' => auth()->id(),
-            'judul' => 'Pendaftaran Ditolak',
-            'isi' => 'Mohon maaf, pendaftaran Anda ditolak. Alasan: ' . $request->catatan,
-            'jenis' => 'notifikasi',
-        ]);
+        // Send notification to orang tua
+        $message = $request->status_verifikasi === 'verified' 
+            ? 'Pembayaran Anda untuk ' . $transaksi->siswa->nama_lengkap . ' telah diverifikasi.'
+            : 'Pembayaran Anda untuk ' . $transaksi->siswa->nama_lengkap . ' ditolak. ' . $request->catatan_admin;
 
-        return redirect()->route('admin.pendaftaran.index')->with('success', 'Pendaftaran berhasil ditolak');
+        Notifikasi::createNotification(
+            $transaksi->orangTua->user_id,
+            'Status Pembayaran',
+            $message,
+            'pembayaran'
+        );
+
+        return back()->with('success', 'Status transaksi berhasil diupdate!');
     }
 
-    // ============= SISWA =============
-    public function siswaIndex()
+    // ============ JADWAL MANAGEMENT ============
+    
+    /**
+     * Kelola Jadwal
+     */
+    public function jadwal()
     {
-        $siswas = Siswa::with(['user', 'orangTua.user'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-        return view('admin.siswa.index', compact('siswas'));
-    }
-
-    public function siswaCreate()
-    {
-        $orangTuas = OrangTua::with('user')->get();
-        return view('admin.siswa.create', compact('orangTuas'));
-    }
-
-    public function siswaStore(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'nama_siswa' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
-            'id_orang_tua' => 'required|exists:orang_tua,id_orang_tua',
-            'tanggal_lahir' => 'required|date_format:Y-m-d\TH:i',
-            'jenjang' => 'required|in:SD,SMP',
-            'kelas' => 'required|string',
-            'telepon' => 'nullable|string',
-            'alamat' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        try {
-            // Buat user
-            $user = User::create([
-                'name' => $request->nama_siswa,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'role' => 'siswa',
-                'telepon' => $request->telepon,
-                'alamat' => $request->alamat,
-            ]);
-
-            // Buat siswa
-            Siswa::create([
-                'user_id' => $user->id,
-                'id_orang_tua' => $request->id_orang_tua,
-                'nama_siswa' => $request->nama_siswa,
-                'tanggal_lahir' => $request->tanggal_lahir,
-                'jenjang' => $request->jenjang,
-                'kelas' => $request->kelas,
-                'status' => 'aktif',
-            ]);
-
-            return redirect()->route('admin.siswa.index')->with('success', 'Siswa berhasil ditambahkan');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
-        }
-    }
-
-    public function siswaEdit($id)
-    {
-        $siswa = Siswa::with('user')->findOrFail($id);
-        $orangTuas = OrangTua::with('user')->get();
-        return view('admin.siswa.edit', compact('siswa', 'orangTuas'));
-    }
-
-    public function siswaUpdate(Request $request, $id)
-    {
-        $siswa = Siswa::findOrFail($id);
-
-        $validator = Validator::make($request->all(), [
-            'nama_siswa' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $siswa->user_id,
-            'id_orang_tua' => 'required|exists:orang_tua,id_orang_tua',
-            'tanggal_lahir' => 'required|date_format:Y-m-d\TH:i',
-            'jenjang' => 'required|in:SD,SMP',
-            'kelas' => 'required|string',
-            'status' => 'required|in:aktif,non-aktif',
-            'telepon' => 'nullable|string',
-            'alamat' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        try {
-            // Update user
-            $siswa->user->update([
-                'name' => $request->nama_siswa,
-                'email' => $request->email,
-                'telepon' => $request->telepon,
-                'alamat' => $request->alamat,
-            ]);
-
-            // Update password jika diisi
-            if ($request->filled('password')) {
-                $siswa->user->update([
-                    'password' => Hash::make($request->password)
-                ]);
-            }
-
-            // Update siswa
-            $siswa->update([
-                'id_orang_tua' => $request->id_orang_tua,
-                'nama_siswa' => $request->nama_siswa,
-                'tanggal_lahir' => $request->tanggal_lahir,
-                'jenjang' => $request->jenjang,
-                'kelas' => $request->kelas,
-                'status' => $request->status,
-            ]);
-
-            return redirect()->route('admin.siswa.index')->with('success', 'Data siswa berhasil diperbarui');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
-        }
-    }
-
-    public function siswaDestroy($id)
-    {
-        $siswa = Siswa::findOrFail($id);
+        $jadwal = Jadwal::with(['siswa'])->get();
+        $siswa = Siswa::all();
         
-        // Hapus user juga
-        $user = $siswa->user;
-        $siswa->delete();
-        $user->delete();
-
-        return redirect()->route('admin.siswa.index')->with('success', 'Siswa berhasil dihapus');
+        return view('admin.jadwal', compact('jadwal', 'siswa'));
     }
 
-    public function siswaShow($id)
+    /**
+     * Store jadwal
+     */
+    public function storeJadwal(Request $request)
     {
-        $siswa = Siswa::with(['user', 'orangTua.user', 'jadwalMateri', 'transaksi'])
-            ->findOrFail($id);
-        
-        $stats = [
-            'total_materi' => $siswa->getMateriCount(),
-            'tugas_selesai' => $siswa->getTugasSelesai(),
-            'tugas_pending' => $siswa->getTugasPending(),
-            'nilai_rata' => $siswa->getNilaiRataRata(),
-        ];
-
-        return view('admin.siswa.show', compact('siswa', 'stats'));
-    }
-
-    // ============= ORANG TUA =============
-    public function orangTuaIndex()
-    {
-        $orangTuas = OrangTua::with('user')->withCount('siswa')->orderBy('created_at', 'desc')->get();
-        return view('admin.orangtua.index', compact('orangTuas'));
-    }
-
-    public function orangTuaShow($id)
-    {
-        $orangTua = OrangTua::with(['user', 'siswa.user', 'pendaftaran', 'transaksi'])
-            ->findOrFail($id);
-        return view('admin.orangtua.show', compact('orangTua'));
-    }
-
-    // ============= JADWAL & MATERI =============
-    public function jadwalIndex(Request $request)
-    {
-        $query = JadwalMateri::with('siswa.user');
-
-        // Filter by jenis
-        if ($request->filled('jenis')) {
-            $query->where('jenis', $request->jenis);
-        }
-
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by siswa name
-        if ($request->filled('siswa')) {
-            $query->whereHas('siswa', function($q) use ($request) {
-                $q->where('nama_siswa', 'like', '%' . $request->siswa . '%');
-            });
-        }
-
-        $jadwals = $query->orderBy('created_at', 'desc')->get();
-
-        return view('admin.jadwal.index', compact('jadwals'));
-    }
-
-    public function jadwalCreate()
-    {
-        $siswas = Siswa::with('user')->aktif()->get();
-        return view('admin.jadwal.create', compact('siswas'));
-    }
-
-    public function jadwalStore(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id_siswa' => 'required|exists:siswa,id_siswa',
-            'judul' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'jenis' => 'required|in:materi,tugas',
-            'file' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,zip|max:10240',
-            'durasi' => 'nullable|integer|min:1',
-            'awal' => 'required|date_format:Y-m-d\TH:i',
-            'deadline' => 'nullable|date_format:Y-m-d\TH:i|after:awal',
+        $request->validate([
+            'siswa_id' => 'required|exists:siswa,id',
+            'mata_pelajaran' => 'required|max:255',
+            'nama_guru' => 'required|max:255',
+            'hari' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'jam_mulai' => 'required',
+            'jam_selesai' => 'required|after:jam_mulai',
+            'ruangan' => 'nullable|max:255',
         ]);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
+        // Check bentrok jadwal
+        if (Jadwal::checkBentrok($request->hari, $request->jam_mulai, $request->jam_selesai, $request->siswa_id)) {
+            return back()->with('error', 'Jadwal bentrok dengan jadwal lain!');
         }
 
-        try {
-            $data = $request->except('file');
-            $data['status'] = 'pending';
+        Jadwal::create($request->all());
 
-            // Handle upload file dengan nama original + timestamp
-            if ($request->hasFile('file')) {
-                $file = $request->file('file');
-                $originalName = $file->getClientOriginalName();
-                $filename = time() . '_' . $originalName;
-                
-                if ($request->jenis === 'materi') {
-                    $file->storeAs('materials', $filename, 'public');
-                    $data['file'] = 'materials/' . $filename;
-                } else {
-                    $file->storeAs('assignments', $filename, 'public');
-                    $data['file'] = 'assignments/' . $filename;
-                }
-            }
-
-            $jadwal = JadwalMateri::create($data);
-
-            // Buat notifikasi untuk siswa
-            Informasi::create([
-                'id_siswa' => $request->id_siswa,
-                'id_pengguna' => auth()->id(),
-                'judul' => ($request->jenis === 'materi' ? 'Materi Baru' : 'Tugas Baru'),
-                'isi' => 'Anda mendapat ' . $request->jenis . ' baru: ' . $request->judul,
-                'jenis' => 'notifikasi',
-            ]);
-
-            return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal/Materi berhasil ditambahkan');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
-        }
+        return back()->with('success', 'Jadwal berhasil ditambahkan!');
     }
 
-    // Helper method untuk download file
-    public function jadwalDownload($id)
+    /**
+     * Update jadwal
+     */
+    public function updateJadwal(Request $request, $id)
     {
-        $jadwal = JadwalMateri::findOrFail($id);
-        
-        if (!$jadwal->file || !Storage::disk('public')->exists($jadwal->file)) {
-            return back()->withErrors(['error' => 'File tidak ditemukan']);
-        }
-        
-        // Ambil nama file original dari path
-        $filename = basename($jadwal->file);
-        // Hapus timestamp dari nama file untuk download
-        $originalName = preg_replace('/^\d+_/', '', $filename);
-        
-        return Storage::disk('public')->download($jadwal->file, $originalName);
-    }
+        $jadwal = Jadwal::findOrFail($id);
 
-    public function jadwalEdit($id)
-    {
-        $jadwal = JadwalMateri::with('siswa')->findOrFail($id);
-        $siswas = Siswa::with('user')->aktif()->get();
-        return view('admin.jadwal.edit', compact('jadwal', 'siswas'));
-    }
-
-    public function jadwalUpdate(Request $request, $id)
-    {
-        $jadwal = JadwalMateri::findOrFail($id);
-
-        $validator = Validator::make($request->all(), [
-            'id_siswa' => 'required|exists:siswa,id_siswa',
-            'judul' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'jenis' => 'required|in:materi,tugas',
-            'file' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,zip|max:10240',
-            'durasi' => 'nullable|integer|min:1',
-            'awal' => 'required|date_format:Y-m-d\TH:i',
-            'deadline' => 'nullable|date_format:Y-m-d\TH:i|after:awal',
-            'status' => 'required|in:pending,selesai,terlambat',
+        $request->validate([
+            'siswa_id' => 'required|exists:siswa,id',
+            'mata_pelajaran' => 'required|max:255',
+            'nama_guru' => 'required|max:255',
+            'hari' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'jam_mulai' => 'required',
+            'jam_selesai' => 'required|after:jam_mulai',
+            'ruangan' => 'nullable|max:255',
         ]);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
+        // Check bentrok jadwal
+        if (Jadwal::checkBentrok($request->hari, $request->jam_mulai, $request->jam_selesai, $request->siswa_id, $id)) {
+            return back()->with('error', 'Jadwal bentrok dengan jadwal lain!');
         }
 
-        try {
-            $data = $request->except('file');
+        $jadwal->update($request->all());
 
-            // Handle upload file baru
-            if ($request->hasFile('file')) {
-                // Hapus file lama jika ada
-                if ($jadwal->file && Storage::disk('public')->exists($jadwal->file)) {
-                    Storage::disk('public')->delete($jadwal->file);
-                }
-                
-                $file = $request->file('file');
-                $originalName = $file->getClientOriginalName();
-                $filename = time() . '_' . $originalName;
-                
-                if ($request->jenis === 'materi') {
-                    $file->storeAs('materials', $filename, 'public');
-                    $data['file'] = 'materials/' . $filename;
-                } else {
-                    $file->storeAs('assignments', $filename, 'public');
-                    $data['file'] = 'assignments/' . $filename;
-                }
-            }
-
-            $jadwal->update($data);
-
-            return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal/Materi berhasil diperbarui');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
-        }
+        return back()->with('success', 'Jadwal berhasil diupdate!');
     }
 
-    public function jadwalDestroy($id)
+    /**
+     * Delete jadwal
+     */
+    public function deleteJadwal($id)
     {
-        $jadwal = JadwalMateri::findOrFail($id);
-        
-        // Hapus file jika ada
-        if ($jadwal->file && Storage::disk('public')->exists($jadwal->file)) {
-            Storage::disk('public')->delete($jadwal->file);
-        }
-
+        $jadwal = Jadwal::findOrFail($id);
         $jadwal->delete();
 
-        return redirect()->route('admin.jadwal.index')->with('success', 'Jadwal/Materi berhasil dihapus');
+        return back()->with('success', 'Jadwal berhasil dihapus!');
     }
 
-    public function jadwalShow($id)
+    // ============ KEHADIRAN MANAGEMENT ============
+    
+    /**
+     * Kelola Kehadiran
+     */
+    public function kehadiran()
     {
-        $jadwal = JadwalMateri::with('siswa.user')->findOrFail($id);
-        return view('admin.jadwal.show', compact('jadwal'));
+        $kehadiran = Kehadiran::with(['jadwal', 'siswa'])->latest('tanggal_pertemuan')->get();
+        $jadwal = Jadwal::with('siswa')->get();
+        
+        return view('admin.kehadiran', compact('kehadiran', 'jadwal'));
     }
 
-    // Input nilai tugas
-    // Input nilai tugas - DIPERBAIKI
-    public function inputNilai(Request $request, $id)
+    /**
+     * Store kehadiran
+     */
+    public function storeKehadiran(Request $request)
     {
-        $jadwal = JadwalMateri::findOrFail($id);
+        $request->validate([
+            'jadwal_id' => 'required|exists:jadwal,id',
+            'siswa_id' => 'required|exists:siswa,id',
+            'status' => 'required|in:hadir,sakit,izin,alpha',
+            'tanggal_pertemuan' => 'required|date',
+            'keterangan' => 'nullable|string',
+        ]);
 
-        // Cek apakah request untuk reset nilai
-        if ($request->has('reset_nilai')) {
-            $jadwal->update([
-                'nilai' => null,
-                'status' => 'pending',
-            ]);
-            
-            return back()->with('info', 'Nilai berhasil direset. Silakan input nilai baru.');
-        }
+        Kehadiran::create($request->all());
+
+        return back()->with('success', 'Kehadiran berhasil ditambahkan!');
+    }
+
+    /**
+     * Update kehadiran
+     */
+    public function updateKehadiran(Request $request, $id)
+    {
+        $kehadiran = Kehadiran::findOrFail($id);
 
         $request->validate([
-            'nilai' => 'required|integer|min:0|max:100',
-            'komentar' => 'nullable|string',
+            'status' => 'required|in:hadir,sakit,izin,alpha',
+            'tanggal_pertemuan' => 'required|date',
+            'keterangan' => 'nullable|string',
         ]);
 
-        // Update nilai dan komentar
-        $deskripsiUpdate = $jadwal->deskripsi ?? '';
+        $kehadiran->update($request->only(['status', 'tanggal_pertemuan', 'keterangan']));
+
+        return back()->with('success', 'Kehadiran berhasil diupdate!');
+    }
+
+    /**
+     * Delete kehadiran
+     */
+    public function deleteKehadiran($id)
+    {
+        $kehadiran = Kehadiran::findOrFail($id);
+        $kehadiran->delete();
+
+        return back()->with('success', 'Kehadiran berhasil dihapus!');
+    }
+
+    // ============ MATERI & TUGAS MANAGEMENT ============
+    
+    /**
+     * Kelola Materi & Tugas
+     */
+    public function materiTugas(Request $request)
+    {
+        $tipe = $request->get('tipe', 'all');
+        $jenjang = $request->get('jenjang', 'all');
         
-        // Hapus komentar lama jika ada
-        if (str_contains($deskripsiUpdate, "\n\nKomentar Guru:")) {
-            $deskripsiUpdate = explode("\n\nKomentar Guru:", $deskripsiUpdate)[0];
+        $query = MateriTugas::query();
+        
+        if ($tipe !== 'all') {
+            $query->where('tipe', $tipe);
         }
         
-        // Tambahkan komentar baru jika ada
-        if ($request->komentar) {
-            $deskripsiUpdate .= "\n\nKomentar Guru: " . $request->komentar;
+        if ($jenjang !== 'all') {
+            $query->where('jenjang', $jenjang);
+        }
+        
+        $materiTugas = $query->latest()->get();
+        
+        return view('admin.materi-tugas', compact('materiTugas', 'tipe', 'jenjang'));
+    }
+
+    /**
+     * Store materi/tugas
+     */
+    public function storeMateriTugas(Request $request)
+    {
+        $request->validate([
+            'judul' => 'required|max:255',
+            'deskripsi' => 'required',
+            'tipe' => 'required|in:materi,tugas',
+            'mata_pelajaran' => 'required|max:255',
+            'jenjang' => 'required|in:SD,SMP',
+            'file_path' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,jpg,jpeg,png|max:10240',
+            'deadline' => 'nullable|date|after:today',
+        ]);
+
+        $data = $request->except('file_path');
+
+        if ($request->hasFile('file_path')) {
+            $folder = $request->tipe === 'materi' ? 'materi' : 'tugas';
+            $data['file_path'] = FileUploadHelper::uploadFile(
+                $request->file('file_path'),
+                $folder
+            );
         }
 
-        $jadwal->update([
-            'nilai' => $request->nilai,
-            'deskripsi' => $deskripsiUpdate,
-            'status' => 'selesai',
-        ]);
+        MateriTugas::create($data);
 
-        // Buat notifikasi
-        Informasi::create([
-            'id_siswa' => $jadwal->id_siswa,
-            'id_pengguna' => auth()->id(),
-            'judul' => 'Nilai Tugas',
-            'isi' => 'Tugas "' . $jadwal->judul . '" telah dinilai. Nilai: ' . $request->nilai,
-            'jenis' => 'notifikasi',
-        ]);
-
-        return back()->with('success', 'Nilai berhasil diinput');
+        return back()->with('success', ucfirst($request->tipe) . ' berhasil ditambahkan!');
     }
 
-    // ============= TRANSAKSI =============
-    public function transaksiIndex()
+    /**
+     * Update materi/tugas
+     */
+    public function updateMateriTugas(Request $request, $id)
     {
-        $transaksis = Transaksi::with(['orangTua.user', 'siswa'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-        return view('admin.transaksi.index', compact('transaksis'));
-    }
-
-    public function transaksiShow($id)
-    {
-        $transaksi = Transaksi::with(['orangTua.user', 'siswa'])->findOrFail($id);
-        return view('admin.transaksi.show', compact('transaksi'));
-    }
-
-    public function transaksiVerify(Request $request, $id)
-    {
-        $transaksi = Transaksi::findOrFail($id);
-
-        if ($transaksi->status !== 'menunggu') {
-            return back()->withErrors(['error' => 'Transaksi ini sudah diproses']);
-        }
-
-        $transaksi->update([
-            'status' => 'diverifikasi',
-            'keterangan' => $request->keterangan,
-            'diverifikasi_pada' => now(),
-        ]);
-
-        // Buat notifikasi
-        Informasi::create([
-            'id_siswa' => $transaksi->id_siswa,
-            'id_pengguna' => auth()->id(),
-            'judul' => 'Pembayaran Diverifikasi',
-            'isi' => 'Pembayaran sebesar ' . $transaksi->getFormattedJumlah() . ' telah diverifikasi.',
-            'jenis' => 'notifikasi',
-        ]);
-
-        return redirect()->route('admin.transaksi.index')->with('success', 'Transaksi berhasil diverifikasi');
-    }
-
-    public function transaksiReject(Request $request, $id)
-    {
-        $transaksi = Transaksi::findOrFail($id);
-
-        if ($transaksi->status !== 'menunggu') {
-            return back()->withErrors(['error' => 'Transaksi ini sudah diproses']);
-        }
+        $materiTugas = MateriTugas::findOrFail($id);
 
         $request->validate([
-            'keterangan' => 'required|string',
+            'judul' => 'required|max:255',
+            'deskripsi' => 'required',
+            'mata_pelajaran' => 'required|max:255',
+            'jenjang' => 'required|in:SD,SMP',
+            'file_path' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,jpg,jpeg,png|max:10240',
+            'deadline' => 'nullable|date',
         ]);
 
-        $transaksi->update([
-            'status' => 'ditolak',
-            'keterangan' => $request->keterangan,
-        ]);
+        $data = $request->except('file_path');
 
-        // Buat notifikasi
-        Informasi::create([
-            'id_siswa' => $transaksi->id_siswa,
-            'id_pengguna' => auth()->id(),
-            'judul' => 'Pembayaran Ditolak',
-            'isi' => 'Pembayaran Anda ditolak. Alasan: ' . $request->keterangan,
-            'jenis' => 'notifikasi',
-        ]);
-
-        return redirect()->route('admin.transaksi.index')->with('success', 'Transaksi berhasil ditolak');
-    }
-
-    // ============= INFORMASI & PENGUMUMAN =============
-    public function informasiIndex()
-    {
-        $informasis = Informasi::with(['siswa', 'pengguna'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-        return view('admin.informasi.index', compact('informasis'));
-    }
-
-    public function informasiCreate()
-    {
-        $siswas = Siswa::with('user')->aktif()->get();
-        return view('admin.informasi.create', compact('siswas'));
-    }
-
-    public function informasiStore(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'judul' => 'required|string|max:255',
-            'isi' => 'required|string',
-            'jenis' => 'required|in:pengumuman,notifikasi',
-            'id_siswa' => 'nullable|exists:siswa,id_siswa',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
+        if ($request->hasFile('file_path')) {
+            $folder = $materiTugas->tipe === 'materi' ? 'materi' : 'tugas';
+            $data['file_path'] = FileUploadHelper::uploadFile(
+                $request->file('file_path'),
+                $folder,
+                $materiTugas->file_path
+            );
         }
 
-        Informasi::create([
-            'id_siswa' => $request->id_siswa,
-            'id_pengguna' => auth()->id(),
-            'judul' => $request->judul,
-            'isi' => $request->isi,
-            'jenis' => $request->jenis,
-        ]);
+        $materiTugas->update($data);
 
-        return redirect()->route('admin.informasi.index')->with('success', 'Informasi berhasil ditambahkan');
+        return back()->with('success', ucfirst($materiTugas->tipe) . ' berhasil diupdate!');
     }
 
-    public function informasiDestroy($id)
+    /**
+     * Delete materi/tugas
+     */
+    public function deleteMateriTugas($id)
     {
-        $informasi = Informasi::findOrFail($id);
-        $informasi->delete();
-
-        return redirect()->route('admin.informasi.index')->with('success', 'Informasi berhasil dihapus');
-    }
-
-    // ============= LAPORAN =============
-    public function laporanIndex()
-    {
-        return view('admin.laporan.index');
-    }
-
-    public function laporanSiswa(Request $request)
-    {
-        $siswas = Siswa::with(['user', 'orangTua.user'])
-            ->when($request->jenjang, fn($q) => $q->byJenjang($request->jenjang))
-            ->when($request->status, fn($q) => $q->where('status', $request->status))
-            ->get();
-
-        if ($request->type === 'pdf') {
-            $pdf = Pdf::loadView('admin.laporan.siswa-pdf', compact('siswas'));
-            return $pdf->download('laporan-siswa-' . date('Y-m-d') . '.pdf');
-        }
-
-        return view('admin.laporan.siswa', compact('siswas'));
-    }
-
-    public function laporanTransaksi(Request $request)
-    {
-        $transaksis = Transaksi::with(['orangTua.user', 'siswa'])
-            ->when($request->status, fn($q) => $q->where('status', $request->status))
-            ->when($request->tanggal_dari, fn($q) => $q->where('tanggal_bayar', '>=', $request->tanggal_dari))
-            ->when($request->tanggal_sampai, fn($q) => $q->where('tanggal_bayar', '<=', $request->tanggal_sampai))
-            ->get();
-
-        $total = $transaksis->where('status', 'diverifikasi')->sum('jumlah');
-
-        if ($request->type === 'pdf') {
-            $pdf = Pdf::loadView('admin.laporan.transaksi-pdf', compact('transaksis', 'total'));
-            return $pdf->download('laporan-transaksi-' . date('Y-m-d') . '.pdf');
-        }
-
-        return view('admin.laporan.transaksi', compact('transaksis', 'total'));
-    }
-
-    public function laporanKemajuanSiswa($id)
-    {
-        $siswa = Siswa::with(['user', 'orangTua.user', 'jadwalMateri'])->findOrFail($id);
+        $materiTugas = MateriTugas::findOrFail($id);
         
-        $stats = [
-            'total_materi' => $siswa->getMateriCount(),
-            'tugas_selesai' => $siswa->getTugasSelesai(),
-            'tugas_pending' => $siswa->getTugasPending(),
-            'tugas_terlambat' => $siswa->getTugasTerlambat(),
-            'nilai_rata' => round($siswa->getNilaiRataRata(), 2),
-            'nilai_tertinggi' => $siswa->getNilaiTertinggi(),
-            'nilai_terendah' => $siswa->getNilaiTerendah(),
-        ];
-
-        $pdf = Pdf::loadView('admin.laporan.kemajuan-siswa-pdf', compact('siswa', 'stats'));
-        return $pdf->download('laporan-kemajuan-' . $siswa->nama_siswa . '-' . date('Y-m-d') . '.pdf');
-    }
-
-    // ============= STATISTIK =============
-    public function statistik()
-    {
-        $stats = [
-            'total_siswa' => Siswa::count(),
-            'siswa_aktif' => Siswa::aktif()->count(),
-            'siswa_sd' => Siswa::byJenjang('SD')->aktif()->count(),
-            'siswa_smp' => Siswa::byJenjang('SMP')->aktif()->count(),
-            'total_orangtua' => OrangTua::count(),
-            'total_paket' => PaketBelajar::count(),
-            'pendaftaran_menunggu' => Pendaftaran::menunggu()->count(),
-            'pendaftaran_diterima' => Pendaftaran::diterima()->count(),
-            'pendaftaran_ditolak' => Pendaftaran::ditolak()->count(),
-            'transaksi_menunggu' => Transaksi::menunggu()->count(),
-            'transaksi_diverifikasi' => Transaksi::diverifikasi()->count(),
-            'total_pendapatan' => Transaksi::diverifikasi()->sum('jumlah'),
-            'total_materi' => JadwalMateri::materi()->count(),
-            'total_tugas' => JadwalMateri::tugas()->count(),
-        ];
-
-        // Data untuk chart
-        $chartData = [
-            'siswa_per_bulan' => $this->getSiswaPerBulan(),
-            'transaksi_per_bulan' => $this->getTransaksiPerBulan(),
-        ];
-
-        return view('admin.statistik', compact('stats', 'chartData'));
-    }
-
-    private function getSiswaPerBulan()
-    {
-        $data = [];
-        for ($i = 11; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            $data[$date->format('M Y')] = Siswa::whereYear('created_at', $date->year)
-                ->whereMonth('created_at', $date->month)
-                ->count();
+        if ($materiTugas->file_path) {
+            FileUploadHelper::deleteFile($materiTugas->file_path);
         }
-        return $data;
+        
+        $materiTugas->delete();
+
+        return back()->with('success', ucfirst($materiTugas->tipe) . ' berhasil dihapus!');
     }
 
-    private function getTransaksiPerBulan()
+    // ============ PENGUMPULAN TUGAS MANAGEMENT ============
+    
+    /**
+     * Kelola Pengumpulan Tugas
+     */
+    public function pengumpulanTugas(Request $request)
     {
-        $data = [];
-        for ($i = 11; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            $data[$date->format('M Y')] = Transaksi::diverifikasi()
-                ->whereYear('tanggal_bayar', $date->year)
-                ->whereMonth('tanggal_bayar', $date->month)
-                ->sum('jumlah');
+        $status = $request->get('status', 'all');
+        
+        $query = PengumpulanTugas::with(['materiTugas', 'siswa']);
+        
+        if ($status === 'belum_dinilai') {
+            $query->belumDinilai();
+        } elseif ($status === 'sudah_dinilai') {
+            $query->sudahDinilai();
         }
-        return $data;
+        
+        $pengumpulan = $query->latest('tanggal_pengumpulan')->get();
+        
+        return view('admin.pengumpulan-tugas', compact('pengumpulan', 'status'));
+    }
+
+    /**
+     * Nilai tugas siswa
+     */
+    public function nilaiTugas(Request $request, $id)
+    {
+        $pengumpulan = PengumpulanTugas::findOrFail($id);
+
+        $request->validate([
+            'nilai' => 'required|numeric|min:0|max:100',
+            'feedback_guru' => 'nullable|string',
+        ]);
+
+        $pengumpulan->update($request->only(['nilai', 'feedback_guru']));
+
+        // Send notification to siswa
+        Notifikasi::createNotification(
+            $pengumpulan->siswa->user_id,
+            'Tugas Telah Dinilai',
+            'Tugas "' . $pengumpulan->materiTugas->judul . '" Anda telah dinilai dengan nilai ' . $request->nilai,
+            'tugas'
+        );
+
+        return back()->with('success', 'Tugas berhasil dinilai!');
+    }
+
+    // ============ FEEDBACK MANAGEMENT ============
+    
+    /**
+     * Kelola Feedback
+     */
+    public function feedback(Request $request)
+    {
+        $status = $request->get('status', 'all');
+        
+        $query = Feedback::with(['orangTua', 'siswa']);
+        
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+        
+        $feedback = $query->latest()->get();
+        
+        return view('admin.feedback', compact('feedback', 'status'));
+    }
+
+    /**
+     * Balas feedback
+     */
+    public function balasFeedback(Request $request, $id)
+    {
+        $feedback = Feedback::findOrFail($id);
+
+        $request->validate([
+            'balasan_admin' => 'required|string',
+        ]);
+
+        $feedback->update([
+            'balasan_admin' => $request->balasan_admin,
+            'status' => 'dibaca',
+        ]);
+
+        // Send notification to orang tua
+        Notifikasi::createNotification(
+            $feedback->orangTua->user_id,
+            'Balasan Feedback',
+            'Admin telah membalas feedback Anda mengenai ' . $feedback->siswa->nama_lengkap,
+            'feedback'
+        );
+
+        return back()->with('success', 'Feedback berhasil dibalas!');
+    }
+
+    /**
+     * Delete feedback
+     */
+    public function deleteFeedback($id)
+    {
+        $feedback = Feedback::findOrFail($id);
+        $feedback->delete();
+
+        return back()->with('success', 'Feedback berhasil dihapus!');
+    }
+
+    // ============ PENGUMUMAN MANAGEMENT ============
+    
+    /**
+     * Kelola Pengumuman
+     */
+    public function pengumuman()
+    {
+        $pengumuman = Pengumuman::with('creator')->latest()->get();
+        
+        return view('admin.pengumuman', compact('pengumuman'));
+    }
+
+    /**
+     * Store pengumuman
+     */
+    public function storePengumuman(Request $request)
+    {
+        $request->validate([
+            'judul' => 'required|max:255',
+            'isi' => 'required',
+            'target' => 'required|in:semua,orangtua,siswa',
+            'status' => 'required|in:draft,published',
+        ]);
+
+        $data = $request->all();
+        $data['created_by'] = auth()->id();
+        $data['tanggal_publikasi'] = $request->status === 'published' ? now() : null;
+
+        $pengumuman = Pengumuman::create($data);
+
+        // Send notification if published
+        if ($request->status === 'published') {
+            $pengumuman->publish();
+        }
+
+        return back()->with('success', 'Pengumuman berhasil ditambahkan!');
+    }
+
+    /**
+     * Update pengumuman
+     */
+    public function updatePengumuman(Request $request, $id)
+    {
+        $pengumuman = Pengumuman::findOrFail($id);
+
+        $request->validate([
+            'judul' => 'required|max:255',
+            'isi' => 'required',
+            'target' => 'required|in:semua,orangtua,siswa',
+            'status' => 'required|in:draft,published',
+        ]);
+
+        $data = $request->only(['judul', 'isi', 'target', 'status']);
+        
+        // If changing from draft to published
+        if ($pengumuman->isDraft() && $request->status === 'published') {
+            $data['tanggal_publikasi'] = now();
+        }
+
+        $pengumuman->update($data);
+
+        // Send notification if newly published
+        if ($pengumuman->wasChanged('status') && $pengumuman->isPublished()) {
+            $pengumuman->publish();
+        }
+
+        return back()->with('success', 'Pengumuman berhasil diupdate!');
+    }
+
+    /**
+     * Delete pengumuman
+     */
+    public function deletePengumuman($id)
+    {
+        $pengumuman = Pengumuman::findOrFail($id);
+        $pengumuman->delete();
+
+        return back()->with('success', 'Pengumuman berhasil dihapus!');
+    }
+
+    // ============ SETTINGS MANAGEMENT ============
+    
+    /**
+     * Kelola Settings Website
+     */
+    public function settings()
+    {
+        $settings = Settings::getSiteSettings();
+        
+        return view('admin.settings', compact('settings'));
+    }
+
+    /**
+     * Update settings
+     */
+    public function updateSettings(Request $request)
+    {
+        $request->validate([
+            'nama_website' => 'required|max:255',
+            'alamat' => 'required',
+            'no_telepon' => 'required|max:20',
+            'email' => 'required|email',
+            'tentang' => 'nullable',
+            'nama_bank' => 'nullable|max:255',
+            'nomor_rekening' => 'nullable|max:255',
+            'atas_nama' => 'nullable|max:255',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $settings = Settings::getSiteSettings();
+        $data = $request->except('logo');
+
+        if ($request->hasFile('logo')) {
+            $data['logo'] = FileUploadHelper::uploadFile(
+                $request->file('logo'),
+                'logos',
+                $settings->logo
+            );
+        }
+
+        $settings->update($data);
+
+        return back()->with('success', 'Pengaturan berhasil diupdate!');
+    }
+
+    // ============ LAPORAN & MONITORING ============
+    
+    /**
+     * Laporan Siswa
+     */
+    public function laporanSiswa()
+    {
+        $siswa = Siswa::with(['orangTua', 'transaksi', 'kehadiran', 'pengumpulanTugas'])->get();
+        
+        return view('admin.laporan-siswa', compact('siswa'));
+    }
+
+    /**
+     * Detail Laporan Siswa
+     */
+    public function detailLaporanSiswa($id)
+    {
+        $siswa = Siswa::with([
+            'orangTua',
+            'jadwal',
+            'kehadiran.jadwal',
+            'pengumpulanTugas.materiTugas',
+            'transaksi.paketBelajar',
+            'feedback',
+            'logActivity'
+        ])->findOrFail($id);
+
+        return view('admin.detail-laporan-siswa', compact('siswa'));
+    }
+
+    // ============ PROFILE MANAGEMENT ============
+    
+    /**
+     * Profil Admin
+     */
+    public function profile()
+    {
+        $user = auth()->user();
+        
+        return view('admin.profile', compact('user'));
+    }
+
+    /**
+     * Update profil admin
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'username' => 'required|max:255|unique:users,username,' . $user->id,
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'password' => 'nullable|min:6|confirmed',
+            'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $data = $request->only(['username', 'email']);
+
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        if ($request->hasFile('foto_profil')) {
+            $data['foto_profil'] = FileUploadHelper::uploadFile(
+                $request->file('foto_profil'),
+                'profile_photos',
+                $user->foto_profil
+            );
+        }
+
+        $user->update($data);
+
+        return back()->with('success', 'Profil berhasil diupdate!');
     }
 }

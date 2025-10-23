@@ -10,99 +10,64 @@ class PaketBelajar extends Model
     use HasFactory;
 
     protected $table = 'paket_belajar';
-    protected $primaryKey = 'id_paket';
-    public $incrementing = true;
 
     protected $fillable = [
         'nama_paket',
         'deskripsi',
         'harga',
-        'durasi',
-        'komentar',
+        'durasi_bulan',
+        'jenjang',
+        'status',
     ];
 
     protected $casts = [
         'harga' => 'float',
     ];
 
-    // Relationships
-    public function pendaftaran()
+    // Relasi One-to-Many dengan Transaksi
+    public function transaksi()
     {
-        return $this->hasMany(Pendaftaran::class, 'id_paket', 'id_paket');
+        return $this->hasMany(Transaksi::class, 'paket_id');
     }
 
-    public function siswa()
-    {
-        return $this->hasManyThrough(
-            Siswa::class,
-            Pendaftaran::class,
-            'id_paket',
-            'id_siswa',
-            'id_paket',
-            'id_siswa'
-        );
-    }
-
-    // Format Methods
-    public function getFormattedHarga()
+    // Get harga formatted
+    public function getHargaFormattedAttribute()
     {
         return 'Rp ' . number_format($this->harga, 0, ',', '.');
     }
 
-    public function getHargaBulanan()
+    // Check if paket tersedia
+    public function isTersedia()
     {
-        return $this->harga / $this->durasi;
+        return $this->status === 'tersedia';
     }
 
-    public function getFormattedHargaBulanan()
+    // Get total pembelian paket
+    public function getTotalPembelianAttribute()
     {
-        return 'Rp ' . number_format($this->getHargaBulanan(), 0, ',', '.');
-    }
-
-    // Count Methods
-    public function getTotalPendaftar()
-    {
-        return $this->pendaftaran()->count();
-    }
-
-    public function getPendaftarMenunggu()
-    {
-        return $this->pendaftaran()
-            ->where('status', 'menunggu')
+        return $this->transaksi()
+            ->where('status_verifikasi', 'verified')
             ->count();
     }
 
-    public function getPendaftarDiterima()
+    // Get total pendapatan dari paket
+    public function getTotalPendapatanAttribute()
     {
-        return $this->pendaftaran()
-            ->where('status', 'diterima')
-            ->count();
+        return $this->transaksi()
+            ->where('status_verifikasi', 'verified')
+            ->sum('total_pembayaran');
     }
 
-    public function getPendaftarDitolak()
+    // Scope untuk paket tersedia
+    public function scopeTersedia($query)
     {
-        return $this->pendaftaran()
-            ->where('status', 'ditolak')
-            ->count();
+        return $query->where('status', 'tersedia');
     }
 
-    // Query Scopes
-    public function scopeByHarga($query, $min, $max = null)
+    // Scope untuk jenjang tertentu
+    public function scopeJenjang($query, $jenjang)
     {
-        $query->where('harga', '>=', $min);
-        if ($max) {
-            $query->where('harga', '<=', $max);
-        }
-        return $query;
-    }
-
-    public function scopeByDurasi($query, $durasi)
-    {
-        return $query->where('durasi', $durasi);
-    }
-
-    public function scopeSearchNama($query, $nama)
-    {
-        return $query->where('nama_paket', 'like', "%$nama%");
+        return $query->where('jenjang', $jenjang)
+            ->orWhere('jenjang', 'SD & SMP');
     }
 }

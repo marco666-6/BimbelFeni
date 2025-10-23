@@ -1,11 +1,9 @@
 <?php
-// sides\app\Http\Middleware\OrangTuaMiddleware.php
 
 namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class OrangTuaMiddleware
@@ -17,14 +15,20 @@ class OrangTuaMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Cek apakah user sudah login
-        if (!Auth::check()) {
-            return redirect()->route('login')->withErrors(['error' => 'Silakan login terlebih dahulu']);
+        // Check if user is authenticated
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
         }
 
-        // Cek apakah user adalah orang tua
-        if (!Auth::user()->isOrangTua()) {
-            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        // Check if user is orang tua
+        if (!auth()->user()->isOrangTua()) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        // Check if user is active
+        if (!auth()->user()->isAktif()) {
+            auth()->logout();
+            return redirect()->route('login')->with('error', 'Akun Anda tidak aktif.');
         }
 
         return $next($request);

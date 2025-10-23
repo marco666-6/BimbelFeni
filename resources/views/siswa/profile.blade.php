@@ -1,214 +1,237 @@
+<!-- View: siswa/profile.blade.php -->
 @extends('layouts.ortusiswa')
 
-@section('title', 'Profil Saya')
+@section('title', 'Profil')
+@section('page-title', 'Profil Saya')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0"><i class="fas fa-user-circle"></i> Profil Saya</h2>
-</div>
-
-<div class="row">
-    <div class="col-md-4">
-        <!-- Profile Card -->
-        <div class="card">
-            <div class="card-body text-center">
-                <div class="mb-3">
-                    @if($user->foto_profil)
-                        <img src="{{ asset($user->foto_profil) }}" alt="Foto Profil" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
-                    @else
-                        <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 150px; height: 150px; font-size: 3rem;">
-                            {{ strtoupper(substr($user->name, 0, 1)) }}
-                        </div>
-                    @endif
-                </div>
-                <h4 class="mb-1">{{ $user->name }}</h4>
-                <p class="text-muted mb-2">{{ ucfirst($user->role) }}</p>
-                <span class="badge bg-{{ $siswa->status === 'aktif' ? 'success' : 'secondary' }}">
-                    Status: {{ ucfirst($siswa->status) }}
-                </span>
-            </div>
-        </div>
-        
-        <!-- Info Card -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <i class="fas fa-info-circle"></i> Informasi Siswa
-            </div>
-            <div class="card-body">
-                <ul class="list-unstyled mb-0">
-                    <li class="mb-2">
-                        <i class="fas fa-school text-primary"></i>
-                        <strong>Jenjang:</strong> {{ $siswa->jenjang }}
-                    </li>
-                    <li class="mb-2">
-                        <i class="fas fa-graduation-cap text-primary"></i>
-                        <strong>Kelas:</strong> {{ $siswa->kelas }}
-                    </li>
-                    <li class="mb-2">
-                        <i class="fas fa-birthday-cake text-primary"></i>
-                        <strong>Tanggal Lahir:</strong><br>
-                        {{ $siswa->getTanggalLahirFormatted() }}
-                    </li>
-                    @if($siswa->getUmur())
-                        <li class="mb-2">
-                            <i class="fas fa-calendar text-primary"></i>
-                            <strong>Umur:</strong> {{ $siswa->getUmur() }} tahun
-                        </li>
-                    @endif
-                    <li class="mb-2">
-                        <i class="fas fa-user-friends text-primary"></i>
-                        <strong>Orang Tua:</strong><br>
-                        {{ $siswa->orangTua->nama_orang_tua ?? '-' }}
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-8">
-        <!-- Edit Profile Form -->
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-edit"></i> Edit Profil
-            </div>
-            <div class="card-body">
-                <form action="{{ route('siswa.profile.update') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
+<div class="container-fluid">
+    <div class="row">
+        <!-- Profil Card -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <img src="{{ $user->foto_profil_url }}" 
+                         alt="Foto Profil" 
+                         class="rounded-circle mb-3" 
+                         width="150" 
+                         height="150"
+                         style="object-fit: cover; border: 5px solid #e9ecef;">
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="nama_siswa" class="form-label">Nama Lengkap</label>
-                            <input type="text" class="form-control @error('nama_siswa') is-invalid @enderror" 
-                                   id="nama_siswa" name="nama_siswa" value="{{ old('nama_siswa', $user->name) }}" required>
-                            @error('nama_siswa')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                    <h4 class="mb-1">{{ $siswa->nama_lengkap }}</h4>
+                    <p class="text-muted mb-3">{{ $user->email }}</p>
+                    
+                    <div class="d-flex justify-content-around mb-3">
+                        <div>
+                            <h5 class="mb-0 text-primary">{{ $siswa->jenjang }}</h5>
+                            <small class="text-muted">Jenjang</small>
                         </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                                   id="email" name="email" value="{{ old('email', $user->email) }}" required>
-                            @error('email')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="vr"></div>
+                        <div>
+                            <h5 class="mb-0 text-primary">{{ $siswa->kelas }}</h5>
+                            <small class="text-muted">Kelas</small>
+                        </div>
+                        <div class="vr"></div>
+                        <div>
+                            <h5 class="mb-0 text-primary">{{ $siswa->usia }} Tahun</h5>
+                            <small class="text-muted">Usia</small>
                         </div>
                     </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <small>Status: <strong class="text-uppercase">{{ $user->status }}</strong></small>
+                    </div>
+                </div>
+            </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="telepon" class="form-label">Nomor Telepon</label>
-                            <input type="text" class="form-control @error('telepon') is-invalid @enderror" 
-                                   id="telepon" name="telepon" value="{{ old('telepon', $user->telepon) }}">
-                            @error('telepon')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="foto_profil" class="form-label">Foto Profil</label>
-                            <input type="file" class="form-control @error('foto_profil') is-invalid @enderror" 
-                                   id="foto_profil" name="foto_profil" accept="image/jpeg,image/png,image/jpg">
+            <!-- Info Tambahan -->
+            <div class="card mt-3">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-person"></i> Informasi Orang Tua</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td class="text-muted">Nama</td>
+                            <td class="text-end"><strong>{{ $siswa->orangTua->nama_lengkap }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">No. Telepon</td>
+                            <td class="text-end"><strong>{{ $siswa->orangTua->no_telepon }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Pekerjaan</td>
+                            <td class="text-end"><strong>{{ $siswa->orangTua->pekerjaan ?? '-' }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Edit Profil -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pencil-square"></i> Edit Profil
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('siswa.profile.update') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
+
+                        <!-- Foto Profil -->
+                        <div class="mb-3">
+                            <label class="form-label">Foto Profil</label>
+                            <input type="file" 
+                                   class="form-control @error('foto_profil') is-invalid @enderror" 
+                                   name="foto_profil" 
+                                   accept="image/*">
+                            <small class="text-muted">Format: JPG, JPEG, PNG. Maksimal 2MB</small>
                             @error('foto_profil')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                            <small class="text-muted">Format: JPEG, PNG, JPG (Maks. 2MB)</small>
                         </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label for="alamat" class="form-label">Alamat</label>
-                        <textarea class="form-control @error('alamat') is-invalid @enderror" 
-                                  id="alamat" name="alamat" rows="3">{{ old('alamat', $user->alamat) }}</textarea>
-                        @error('alamat')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
+                        <!-- Data Akun -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-person-badge"></i> Data Akun
+                        </h6>
 
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ route('siswa.dashboard') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Kembali
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Simpan Perubahan
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Username <span class="text-danger">*</span></label>
+                                <input type="text" 
+                                       class="form-control @error('username') is-invalid @enderror" 
+                                       name="username" 
+                                       value="{{ old('username', $user->username) }}" 
+                                       required>
+                                @error('username')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
 
-        <!-- Stats Card -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <i class="fas fa-chart-line"></i> Statistik Belajar
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-card primary p-3 rounded">
-                            <h4 class="mb-0">{{ $siswa->getMateriCount() }}</h4>
-                            <small class="text-muted">Total Materi</small>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" 
+                                       class="form-control @error('email') is-invalid @enderror" 
+                                       name="email" 
+                                       value="{{ old('email', $user->email) }}" 
+                                       required>
+                                @error('email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-card success p-3 rounded">
-                            <h4 class="mb-0">{{ $siswa->getTugasSelesai() }}</h4>
-                            <small class="text-muted">Tugas Selesai</small>
+
+                        <!-- Password -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-lock"></i> Ubah Password
+                        </h6>
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <small>Kosongkan jika tidak ingin mengubah password</small>
                         </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-card warning p-3 rounded">
-                            <h4 class="mb-0">{{ $siswa->getTugasPending() }}</h4>
-                            <small class="text-muted">Tugas Pending</small>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Password Baru</label>
+                                <input type="password" 
+                                       class="form-control @error('password') is-invalid @enderror" 
+                                       name="password">
+                                <small class="text-muted">Minimal 6 karakter</small>
+                                @error('password')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Konfirmasi Password</label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       name="password_confirmation">
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="stat-card info p-3 rounded">
-                            <h4 class="mb-0">{{ round($siswa->getNilaiRataRata(), 2) ?? 0 }}</h4>
-                            <small class="text-muted">Nilai Rata-rata</small>
+
+                        <!-- Data Siswa -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-person"></i> Data Siswa
+                        </h6>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+                                <input type="text" 
+                                       class="form-control @error('nama_lengkap') is-invalid @enderror" 
+                                       name="nama_lengkap" 
+                                       value="{{ old('nama_lengkap', $siswa->nama_lengkap) }}" 
+                                       required>
+                                @error('nama_lengkap')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tanggal Lahir <span class="text-danger">*</span></label>
+                                <input type="date" 
+                                       class="form-control @error('tanggal_lahir') is-invalid @enderror" 
+                                       name="tanggal_lahir" 
+                                       value="{{ old('tanggal_lahir', $siswa->tanggal_lahir ? $siswa->tanggal_lahir->format('Y-m-d') : '') }}" 
+                                       required>
+                                @error('tanggal_lahir')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
-                    </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Jenjang</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       value="{{ $siswa->jenjang }}" 
+                                       disabled>
+                                <small class="text-muted">Tidak dapat diubah</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Kelas <span class="text-danger">*</span></label>
+                                <input type="text" 
+                                       class="form-control @error('kelas') is-invalid @enderror" 
+                                       name="kelas" 
+                                       value="{{ old('kelas', $siswa->kelas) }}" 
+                                       placeholder="Contoh: 7A, 8B"
+                                       required>
+                                @error('kelas')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-save"></i> Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </div>
-        </div>
-
-        <!-- Change Password Card -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <i class="fas fa-key"></i> Ubah Password
-            </div>
-            <div class="card-body">
-                <form action="{{ route('password.update') }}" method="POST">
-                    @csrf
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="current_password" class="form-label">Password Saat Ini</label>
-                            <input type="password" class="form-control @error('current_password') is-invalid @enderror" 
-                                   id="current_password" name="current_password" required>
-                            @error('current_password')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="new_password" class="form-label">Password Baru</label>
-                            <input type="password" class="form-control @error('new_password') is-invalid @enderror" 
-                                   id="new_password" name="new_password" required>
-                            @error('new_password')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="new_password_confirmation" class="form-label">Konfirmasi Password</label>
-                            <input type="password" class="form-control" 
-                                   id="new_password_confirmation" name="new_password_confirmation" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-key"></i> Ubah Password
-                    </button>
-                </form>
             </div>
         </div>
     </div>
 </div>
+
+@push('styles')
+<style>
+    .card {
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+@endpush
 @endsection

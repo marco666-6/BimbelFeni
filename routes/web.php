@@ -13,208 +13,160 @@ use App\Http\Controllers\SiswaController;
 |--------------------------------------------------------------------------
 */
 
-// ============= PUBLIC ROUTES =============
+// ============ PUBLIC ROUTES ============
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/tentang', [HomeController::class, 'tentang'])->name('tentang');
 Route::get('/kontak', [HomeController::class, 'kontak'])->name('kontak');
-Route::post('/kontak', [HomeController::class, 'submitKontak'])->name('kontak.submit');
-Route::get('/paket/{id}', [HomeController::class, 'paketDetail'])->name('paket.detail');
-Route::get('/whatsapp', [HomeController::class, 'redirectWhatsApp'])->name('whatsapp');
+Route::get('/paket', [HomeController::class, 'paket'])->name('paket');
 
-// ============= AUTH ROUTES =============
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register'])->name('register.post');
-});
+// ============ AUTH ROUTES ============
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::middleware('auth')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    Route::post('/profile/update', [AuthController::class, 'updateProfile'])->name('profile.update');
-    Route::post('/password/update', [AuthController::class, 'updatePassword'])->name('password.update');
-});
-
-// ============= ADMIN ROUTES =============
+// ============ ADMIN ROUTES ============
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     
+    // User Management
+    Route::get('/users', [AdminController::class, 'users'])->name('users');
+    Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
+    Route::put('/users/{id}', [AdminController::class, 'updateUser'])->name('users.update');
+    Route::delete('/users/{id}', [AdminController::class, 'deleteUser'])->name('users.delete');
+    
+    // Orang Tua Management
+    Route::get('/orangtua', [AdminController::class, 'orangTua'])->name('orangtua');
+    Route::post('/orangtua', [AdminController::class, 'storeOrangTua'])->name('orangtua.store');
+    Route::put('/orangtua/{id}', [AdminController::class, 'updateOrangTua'])->name('orangtua.update');
+    Route::delete('/orangtua/{id}', [AdminController::class, 'deleteOrangTua'])->name('orangtua.delete');
+    
+    // Siswa Management
+    Route::get('/siswa', [AdminController::class, 'siswa'])->name('siswa');
+    Route::post('/siswa', [AdminController::class, 'storeSiswa'])->name('siswa.store');
+    Route::put('/siswa/{id}', [AdminController::class, 'updateSiswa'])->name('siswa.update');
+    Route::delete('/siswa/{id}', [AdminController::class, 'deleteSiswa'])->name('siswa.delete');
+    
     // Paket Belajar
-    Route::prefix('paket')->name('paket.')->group(function () {
-        Route::get('/', [AdminController::class, 'paketIndex'])->name('index');
-        Route::get('/create', [AdminController::class, 'paketCreate'])->name('create');
-        Route::post('/', [AdminController::class, 'paketStore'])->name('store');
-        Route::get('/{id}/edit', [AdminController::class, 'paketEdit'])->name('edit');
-        Route::put('/{id}', [AdminController::class, 'paketUpdate'])->name('update');
-        Route::delete('/{id}', [AdminController::class, 'paketDestroy'])->name('destroy');
-    });
+    Route::get('/paket', [AdminController::class, 'paketBelajar'])->name('paket');
+    Route::post('/paket', [AdminController::class, 'storePaket'])->name('paket.store');
+    Route::put('/paket/{id}', [AdminController::class, 'updatePaket'])->name('paket.update');
+    Route::delete('/paket/{id}', [AdminController::class, 'deletePaket'])->name('paket.delete');
     
-    // Pendaftaran
-    Route::prefix('pendaftaran')->name('pendaftaran.')->group(function () {
-        Route::get('/', [AdminController::class, 'pendaftaranIndex'])->name('index');
-        Route::get('/{id}', [AdminController::class, 'pendaftaranShow'])->name('show');
-        Route::post('/{id}/approve', [AdminController::class, 'pendaftaranApprove'])->name('approve');
-        Route::post('/{id}/reject', [AdminController::class, 'pendaftaranReject'])->name('reject');
-    });
+    // Transaksi & Pembayaran
+    Route::get('/transaksi', [AdminController::class, 'transaksi'])->name('transaksi');
+    Route::put('/transaksi/{id}/verifikasi', [AdminController::class, 'verifikasiTransaksi'])->name('transaksi.verifikasi');
     
-    // Siswa
-    Route::prefix('siswa')->name('siswa.')->group(function () {
-        Route::get('/', [AdminController::class, 'siswaIndex'])->name('index');
-        Route::get('/create', [AdminController::class, 'siswaCreate'])->name('create');
-        Route::post('/', [AdminController::class, 'siswaStore'])->name('store');
-        Route::get('/{id}', [AdminController::class, 'siswaShow'])->name('show');
-        Route::get('/{id}/edit', [AdminController::class, 'siswaEdit'])->name('edit');
-        Route::put('/{id}', [AdminController::class, 'siswaUpdate'])->name('update');
-        Route::delete('/{id}', [AdminController::class, 'siswaDestroy'])->name('destroy');
-    });
+    // Jadwal
+    Route::get('/jadwal', [AdminController::class, 'jadwal'])->name('jadwal');
+    Route::post('/jadwal', [AdminController::class, 'storeJadwal'])->name('jadwal.store');
+    Route::put('/jadwal/{id}', [AdminController::class, 'updateJadwal'])->name('jadwal.update');
+    Route::delete('/jadwal/{id}', [AdminController::class, 'deleteJadwal'])->name('jadwal.delete');
     
-    // Orang Tua
-    Route::prefix('orangtua')->name('orangtua.')->group(function () {
-        Route::get('/', [AdminController::class, 'orangTuaIndex'])->name('index');
-        Route::get('/{id}', [AdminController::class, 'orangTuaShow'])->name('show');
-    });
+    // Kehadiran
+    Route::get('/kehadiran', [AdminController::class, 'kehadiran'])->name('kehadiran');
+    Route::post('/kehadiran', [AdminController::class, 'storeKehadiran'])->name('kehadiran.store');
+    Route::put('/kehadiran/{id}', [AdminController::class, 'updateKehadiran'])->name('kehadiran.update');
+    Route::delete('/kehadiran/{id}', [AdminController::class, 'deleteKehadiran'])->name('kehadiran.delete');
     
-    // Jadwal & Materi
-    Route::prefix('jadwal')->name('jadwal.')->group(function () {
-        Route::get('/', [AdminController::class, 'jadwalIndex'])->name('index');
-        Route::get('/create', [AdminController::class, 'jadwalCreate'])->name('create');
-        Route::post('/', [AdminController::class, 'jadwalStore'])->name('store');
-        Route::get('/{id}', [AdminController::class, 'jadwalShow'])->name('show');
-        Route::get('/{id}/edit', [AdminController::class, 'jadwalEdit'])->name('edit');
-        Route::put('/{id}', [AdminController::class, 'jadwalUpdate'])->name('update');
-        Route::delete('/{id}', [AdminController::class, 'jadwalDestroy'])->name('destroy');
-        Route::post('/{id}/nilai', [AdminController::class, 'inputNilai'])->name('nilai');
-    });
+    // Materi & Tugas
+    Route::get('/materi-tugas', [AdminController::class, 'materiTugas'])->name('materi-tugas');
+    Route::post('/materi-tugas', [AdminController::class, 'storeMateriTugas'])->name('materi-tugas.store');
+    Route::put('/materi-tugas/{id}', [AdminController::class, 'updateMateriTugas'])->name('materi-tugas.update');
+    Route::delete('/materi-tugas/{id}', [AdminController::class, 'deleteMateriTugas'])->name('materi-tugas.delete');
     
-    // Transaksi
-    Route::prefix('transaksi')->name('transaksi.')->group(function () {
-        Route::get('/', [AdminController::class, 'transaksiIndex'])->name('index');
-        Route::get('/{id}', [AdminController::class, 'transaksiShow'])->name('show');
-        Route::post('/{id}/verify', [AdminController::class, 'transaksiVerify'])->name('verify');
-        Route::post('/{id}/reject', [AdminController::class, 'transaksiReject'])->name('reject');
-    });
+    // Pengumpulan Tugas
+    Route::get('/pengumpulan-tugas', [AdminController::class, 'pengumpulanTugas'])->name('pengumpulan-tugas');
+    Route::put('/pengumpulan-tugas/{id}/nilai', [AdminController::class, 'nilaiTugas'])->name('pengumpulan-tugas.nilai');
     
-    // Informasi
-    Route::prefix('informasi')->name('informasi.')->group(function () {
-        Route::get('/', [AdminController::class, 'informasiIndex'])->name('index');
-        Route::get('/create', [AdminController::class, 'informasiCreate'])->name('create');
-        Route::post('/', [AdminController::class, 'informasiStore'])->name('store');
-        Route::delete('/{id}', [AdminController::class, 'informasiDestroy'])->name('destroy');
-    });
+    // Feedback
+    Route::get('/feedback', [AdminController::class, 'feedback'])->name('feedback');
+    Route::put('/feedback/{id}/balas', [AdminController::class, 'balasFeedback'])->name('feedback.balas');
+    Route::delete('/feedback/{id}', [AdminController::class, 'deleteFeedback'])->name('feedback.delete');
+    
+    // Pengumuman
+    Route::get('/pengumuman', [AdminController::class, 'pengumuman'])->name('pengumuman');
+    Route::post('/pengumuman', [AdminController::class, 'storePengumuman'])->name('pengumuman.store');
+    Route::put('/pengumuman/{id}', [AdminController::class, 'updatePengumuman'])->name('pengumuman.update');
+    Route::delete('/pengumuman/{id}', [AdminController::class, 'deletePengumuman'])->name('pengumuman.delete');
+    
+    // Settings
+    Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
+    Route::put('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
     
     // Laporan
-    Route::prefix('laporan')->name('laporan.')->group(function () {
-        Route::get('/', [AdminController::class, 'laporanIndex'])->name('index');
-        Route::get('/siswa', [AdminController::class, 'laporanSiswa'])->name('siswa');
-        Route::get('/transaksi', [AdminController::class, 'laporanTransaksi'])->name('transaksi');
-        Route::get('/kemajuan/{id}', [AdminController::class, 'laporanKemajuanSiswa'])->name('kemajuan');
-    });
+    Route::get('/laporan-siswa', [AdminController::class, 'laporanSiswa'])->name('laporan-siswa');
+    Route::get('/laporan-siswa/{id}', [AdminController::class, 'detailLaporanSiswa'])->name('laporan-siswa.detail');
     
-    // Statistik
-    Route::get('/statistik', [AdminController::class, 'statistik'])->name('statistik');
+    // Profile
+    Route::get('/profile', [AdminController::class, 'profile'])->name('profile');
+    Route::put('/profile', [AdminController::class, 'updateProfile'])->name('profile.update');
 });
 
-// ============= ORANG TUA ROUTES =============
+// ============ ORANG TUA ROUTES ============
 Route::middleware(['auth', 'orang_tua'])->prefix('orangtua')->name('orangtua.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [OrangTuaController::class, 'dashboard'])->name('dashboard');
     
-    // Paket
-    Route::prefix('paket')->name('paket.')->group(function () {
-        Route::get('/', [OrangTuaController::class, 'paketIndex'])->name('index');
-        Route::get('/{id}', [OrangTuaController::class, 'paketShow'])->name('show');
-    });
+    // Monitoring Anak
+    Route::get('/anak', [OrangTuaController::class, 'anak'])->name('anak');
+    Route::get('/anak/{id}', [OrangTuaController::class, 'detailAnak'])->name('anak.detail');
+    Route::get('/anak/{id}/jadwal', [OrangTuaController::class, 'jadwalAnak'])->name('anak.jadwal');
+    Route::get('/anak/{id}/log-activity', [OrangTuaController::class, 'logActivity'])->name('anak.log-activity');
+    Route::get('/anak/{id}/rapor', [OrangTuaController::class, 'raporAnak'])->name('anak.rapor');
     
-    // Pendaftaran
-    Route::prefix('pendaftaran')->name('pendaftaran.')->group(function () {
-        Route::get('/', [OrangTuaController::class, 'pendaftaranIndex'])->name('index');
-        Route::get('/create', [OrangTuaController::class, 'pendaftaranCreate'])->name('create');
-        Route::post('/', [OrangTuaController::class, 'pendaftaranStore'])->name('store');
-        Route::get('/{id}', [OrangTuaController::class, 'pendaftaranShow'])->name('show');
-    });
-    
-    // Siswa (Anak)
-    Route::prefix('siswa')->name('siswa.')->group(function () {
-        Route::get('/', [OrangTuaController::class, 'siswaIndex'])->name('index');
-        Route::get('/{id}', [OrangTuaController::class, 'siswaShow'])->name('show');
-    });
-    
-    // Jadwal
-    Route::get('/jadwal', [OrangTuaController::class, 'jadwalIndex'])->name('jadwal.index');
-    
-    // Transaksi
-    Route::prefix('transaksi')->name('transaksi.')->group(function () {
-        Route::get('/', [OrangTuaController::class, 'transaksiIndex'])->name('index');
-        Route::get('/create', [OrangTuaController::class, 'transaksiCreate'])->name('create');
-        Route::post('/', [OrangTuaController::class, 'transaksiStore'])->name('store');
-        Route::get('/{id}', [OrangTuaController::class, 'transaksiShow'])->name('show');
-    });
-    
-    // Riwayat Pembayaran
-    Route::get('/riwayat-pembayaran', [OrangTuaController::class, 'riwayatPembayaran'])->name('riwayat-pembayaran');
-    
-    // Laporan Anak
-    Route::get('/laporan-anak/{id}', [OrangTuaController::class, 'laporanAnak'])->name('laporan-anak');
-    
-    // Informasi
-    Route::prefix('informasi')->name('informasi.')->group(function () {
-        Route::get('/', [OrangTuaController::class, 'informasiIndex'])->name('index');
-    });
+    // Paket & Pembayaran
+    Route::get('/paket-belajar', [OrangTuaController::class, 'paketBelajar'])->name('paket-belajar');
+    Route::post('/paket-belajar/beli', [OrangTuaController::class, 'beliPaket'])->name('paket-belajar.beli');
+    Route::get('/transaksi', [OrangTuaController::class, 'transaksi'])->name('transaksi');
     
     // Feedback
-    Route::prefix('feedback')->name('feedback.')->group(function () {
-        Route::get('/create', [OrangTuaController::class, 'feedbackCreate'])->name('create');
-        Route::post('/', [OrangTuaController::class, 'feedbackStore'])->name('store');
-    });
+    Route::get('/feedback', [OrangTuaController::class, 'feedback'])->name('feedback');
+    Route::post('/feedback', [OrangTuaController::class, 'storeFeedback'])->name('feedback.store');
+    
+    // Pengumuman
+    Route::get('/pengumuman', [OrangTuaController::class, 'pengumuman'])->name('pengumuman');
+    
+    // Notifikasi
+    Route::get('/notifikasi', [OrangTuaController::class, 'notifikasi'])->name('notifikasi');
+    Route::put('/notifikasi/{id}/read', [OrangTuaController::class, 'markNotifikasiRead'])->name('notifikasi.read');
     
     // Profile
     Route::get('/profile', [OrangTuaController::class, 'profile'])->name('profile');
-    Route::post('/profile', [OrangTuaController::class, 'profileUpdate'])->name('profile.update');
-    
-    // WhatsApp
-    Route::get('/whatsapp', [OrangTuaController::class, 'whatsappAdmin'])->name('whatsapp');
+    Route::put('/profile', [OrangTuaController::class, 'updateProfile'])->name('profile.update');
 });
 
-// ============= SISWA ROUTES =============
+// ============ SISWA ROUTES ============
 Route::middleware(['auth', 'siswa'])->prefix('siswa')->name('siswa.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [SiswaController::class, 'dashboard'])->name('dashboard');
     
+    // Materi & Tugas
+    Route::get('/materi-tugas', [SiswaController::class, 'materiTugas'])->name('materi-tugas');
+    Route::get('/materi-tugas/{id}', [SiswaController::class, 'detailMateriTugas'])->name('materi-tugas.detail');
+    Route::get('/materi-tugas/{id}/download', [SiswaController::class, 'downloadMateriTugas'])->name('materi-tugas.download');
+    Route::post('/tugas/kumpulkan', [SiswaController::class, 'kumpulkanTugas'])->name('tugas.kumpulkan');
+    
     // Jadwal
-    Route::prefix('jadwal')->name('jadwal.')->group(function () {
-        Route::get('/', [SiswaController::class, 'jadwalIndex'])->name('index');
-        Route::get('/{id}', [SiswaController::class, 'jadwalShow'])->name('show');
-    });
+    Route::get('/jadwal', [SiswaController::class, 'jadwal'])->name('jadwal');
     
-    // Materi
-    Route::prefix('materi')->name('materi.')->group(function () {
-        Route::get('/', [SiswaController::class, 'materiIndex'])->name('index');
-        Route::get('/{id}', [SiswaController::class, 'materiShow'])->name('show');
-        Route::get('/{id}/download', [SiswaController::class, 'materiDownload'])->name('download');
-    });
+    // Nilai & Rapor
+    Route::get('/nilai', [SiswaController::class, 'nilai'])->name('nilai');
+    Route::get('/rapor', [SiswaController::class, 'rapor'])->name('rapor');
     
-    // Tugas
-    Route::prefix('tugas')->name('tugas.')->group(function () {
-        Route::get('/', [SiswaController::class, 'tugasIndex'])->name('index');
-        Route::get('/{id}', [SiswaController::class, 'tugasShow'])->name('show');
-        Route::get('/{id}/download', [SiswaController::class, 'tugasDownload'])->name('download');
-        Route::post('/{id}/upload', [SiswaController::class, 'tugasUpload'])->name('upload');
-    });
+    // Kehadiran
+    Route::get('/kehadiran', [SiswaController::class, 'kehadiran'])->name('kehadiran');
     
-    // Nilai
-    Route::get('/nilai', [SiswaController::class, 'nilaiIndex'])->name('nilai.index');
+    // Pengumuman
+    Route::get('/pengumuman', [SiswaController::class, 'pengumuman'])->name('pengumuman');
+    Route::get('/pengumuman/{id}', [SiswaController::class, 'detailPengumuman'])->name('pengumuman.detail');
     
-    // Laporan Kemajuan
-    Route::get('/laporan-kemajuan', [SiswaController::class, 'laporanKemajuan'])->name('laporan-kemajuan');
-    
-    // Informasi
-    Route::prefix('informasi')->name('informasi.')->group(function () {
-        Route::get('/', [SiswaController::class, 'informasiIndex'])->name('index');
-        Route::get('/{id}', [SiswaController::class, 'informasiShow'])->name('show');
-    });
+    // Notifikasi
+    Route::get('/notifikasi', [SiswaController::class, 'notifikasi'])->name('notifikasi');
+    Route::put('/notifikasi/{id}/read', [SiswaController::class, 'markNotifikasiRead'])->name('notifikasi.read');
+    Route::put('/notifikasi/read-all', [SiswaController::class, 'markAllNotifikasiRead'])->name('notifikasi.read-all');
     
     // Profile
     Route::get('/profile', [SiswaController::class, 'profile'])->name('profile');
-    Route::post('/profile', [SiswaController::class, 'profileUpdate'])->name('profile.update');
+    Route::put('/profile', [SiswaController::class, 'updateProfile'])->name('profile.update');
 });

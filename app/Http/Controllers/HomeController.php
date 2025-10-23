@@ -1,75 +1,58 @@
 <?php
-// sides\app\Http\Controllers\HomeController.php
 
 namespace App\Http\Controllers;
 
-use App\Models\PaketBelajar;
-use App\Models\Informasi;
 use Illuminate\Http\Request;
+use App\Models\Settings;
+use App\Models\PaketBelajar;
+use App\Models\Pengumuman;
 
 class HomeController extends Controller
 {
-    // Halaman Landing Page
+    /**
+     * Halaman landing page
+     */
     public function index()
     {
-        // Ambil paket belajar untuk ditampilkan
-        $paketBelajar = PaketBelajar::orderBy('harga', 'asc')->get();
-        
-        // Ambil pengumuman terbaru untuk landing page
-        $pengumuman = Informasi::pengumuman()
-            ->whereNull('id_siswa') // Hanya pengumuman umum
+        $settings = Settings::getSiteSettings();
+        $paketBelajar = PaketBelajar::tersedia()->get();
+        $pengumuman = Pengumuman::published()
+            ->where('target', 'semua')
             ->latest()
-            ->take(3)
+            ->take(5)
             ->get();
-        
-        return view('landing', compact('paketBelajar', 'pengumuman'));
+
+        return view('home.index', compact('settings', 'paketBelajar', 'pengumuman'));
     }
 
-    // Halaman Tentang
+    /**
+     * Halaman tentang bimbel
+     */
     public function tentang()
     {
-        return view('tentang');
+        $settings = Settings::getSiteSettings();
+        return view('home.tentang', compact('settings'));
     }
 
-    // Halaman Kontak
+    /**
+     * Halaman kontak
+     */
     public function kontak()
     {
-        return view('kontak');
+        $settings = Settings::getSiteSettings();
+        return view('home.kontak', compact('settings'));
     }
 
-    // Halaman Paket Belajar Detail
-    public function paketDetail($id)
+    /**
+     * Halaman paket belajar
+     */
+    public function paket()
     {
-        $paket = PaketBelajar::findOrFail($id);
-        return view('paket-detail', compact('paket'));
-    }
+        $settings = Settings::getSiteSettings();
+        $paketSD = PaketBelajar::tersedia()->jenjang('SD')->get();
+        $paketSMP = PaketBelajar::tersedia()->jenjang('SMP')->get();
+        $paketKombo = PaketBelajar::tersedia()->where('jenjang', 'SD & SMP')->get();
 
-    // Submit kontak form
-    public function submitKontak(Request $request)
-    {
-        $request->validate([
-            'nama' => 'required|string|max:255',
-            'email' => 'required|email',
-            'subjek' => 'required|string|max:255',
-            'pesan' => 'required|string',
-        ]);
-
-        // Di sini bisa ditambahkan logic untuk mengirim email
-        // Atau menyimpan ke database
-        
-        // Untuk saat ini hanya redirect dengan pesan sukses
-        return back()->with('success', 'Terima kasih! Pesan Anda telah terkirim. Kami akan menghubungi Anda segera.');
-    }
-
-    // Redirect ke WhatsApp
-    public function redirectWhatsApp()
-    {
-        // Nomor WhatsApp admin (sesuaikan dengan nomor bimbel)
-        $phoneNumber = '6281234567890'; // Ganti dengan nomor yang sesuai
-        $message = 'Halo Bimbel Oriana Enilin, saya ingin bertanya mengenai program bimbingan belajar.';
-        
-        $whatsappUrl = "https://wa.me/{$phoneNumber}?text=" . urlencode($message);
-        
-        return redirect()->away($whatsappUrl);
+        return view('home.paket', compact('settings', 'paketSD', 'paketSMP', 'paketKombo'));
     }
 }
