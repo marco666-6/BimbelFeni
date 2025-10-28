@@ -68,6 +68,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/kehadiran', [AdminController::class, 'storeKehadiran'])->name('kehadiran.store');
     Route::put('/kehadiran/{id}', [AdminController::class, 'updateKehadiran'])->name('kehadiran.update');
     Route::delete('/kehadiran/{id}', [AdminController::class, 'deleteKehadiran'])->name('kehadiran.delete');
+    Route::get('/kehadiran/{id}/data', [AdminController::class, 'getKehadiranData']);
+    Route::put('/kehadiran/{id}/update-status', [AdminController::class, 'updateStatusKehadiran']);
+    Route::post('/kehadiran/absensi-massal-jadwal', [AdminController::class, 'absensiMassalJadwal'])->name('kehadiran.absensi-massal-jadwal');
+    Route::post('/kehadiran/absensi-massal-semua', [AdminController::class, 'absensiMassalSemua'])->name('kehadiran.absensi-massal-semua');
+    Route::get('/laporan-kehadiran', [AdminController::class, 'laporanKehadiran']);
     
     // Materi & Tugas
     Route::get('/materi-tugas', [AdminController::class, 'materiTugas'])->name('materi-tugas');

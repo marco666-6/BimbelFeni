@@ -65,52 +65,6 @@
                             </form>
                         </td>
                     </tr>
-
-                    <!-- Edit Modal for each -->
-                    <div class="modal fade" id="editOrangTuaModal{{ $ot->id }}" tabindex="-1">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <form action="{{ route('admin.orangtua.update', $ot->id) }}" method="POST">
-                                    @csrf
-                                    @method('PUT')
-                                    <div class="modal-header">
-                                        <h5 class="modal-title fw-bold">Edit Orang Tua</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Nama Lengkap *</label>
-                                                    <input type="text" class="form-control" name="nama_lengkap" 
-                                                           value="{{ $ot->nama_lengkap }}" required>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label">No. Telepon *</label>
-                                                    <input type="text" class="form-control" name="no_telepon" 
-                                                           value="{{ $ot->no_telepon }}" required>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Alamat *</label>
-                                            <textarea class="form-control" name="alamat" rows="3" required>{{ $ot->alamat }}</textarea>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Pekerjaan</label>
-                                            <input type="text" class="form-control" name="pekerjaan" value="{{ $ot->pekerjaan }}">
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                        <button type="submit" class="btn btn-primary">Update</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
                     @empty
                     <tr>
                         <td colspan="7" class="text-center py-4 text-muted">
@@ -124,6 +78,49 @@
         </div>
     </div>
 </div>
+
+@foreach($orangTua as $ot)
+<div class="modal fade" id="editOrangTuaModal{{ $ot->id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ route('admin.orangtua.update', $ot->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Edit Orang Tua</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nama Lengkap *</label>
+                            <input type="text" class="form-control" name="nama_lengkap"
+                                   value="{{ $ot->nama_lengkap }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">No. Telepon *</label>
+                            <input type="text" class="form-control" name="no_telepon"
+                                   value="{{ $ot->no_telepon }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Alamat *</label>
+                        <textarea class="form-control" name="alamat" rows="3" required>{{ $ot->alamat }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Pekerjaan</label>
+                        <input type="text" class="form-control" name="pekerjaan" value="{{ $ot->pekerjaan }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
 
 <!-- Add Orang Tua Modal -->
 <div class="modal fade" id="addOrangTuaModal" tabindex="-1">

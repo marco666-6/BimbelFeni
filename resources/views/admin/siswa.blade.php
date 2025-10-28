@@ -63,68 +63,6 @@
                         </td>
                     </tr>
                     
-                    <!-- Edit Modal -->
-                    <div class="modal fade" id="editSiswaModal{{ $s->id }}" tabindex="-1">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <form action="{{ route('admin.siswa.update', $s->id) }}" method="POST">
-                                    @csrf
-                                    @method('PUT')
-                                    <div class="modal-header">
-                                        <h5 class="modal-title fw-bold">Edit Siswa</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="mb-3">
-                                            <label class="form-label">Orang Tua *</label>
-                                            <select class="form-select" name="orangtua_id" required>
-                                                @foreach($orangTua as $ot)
-                                                <option value="{{ $ot->id }}" {{ $s->orangtua_id == $ot->id ? 'selected' : '' }}>
-                                                    {{ $ot->nama_lengkap }}
-                                                </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Nama Lengkap *</label>
-                                                    <input type="text" class="form-control" name="nama_lengkap" value="{{ $s->nama_lengkap }}" required>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Tanggal Lahir *</label>
-                                                    <input type="date" class="form-control" name="tanggal_lahir" value="{{ $s->tanggal_lahir->format('Y-m-d') }}" required>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Jenjang *</label>
-                                                    <select class="form-select" name="jenjang" required>
-                                                        <option value="SD" {{ $s->jenjang == 'SD' ? 'selected' : '' }}>SD</option>
-                                                        <option value="SMP" {{ $s->jenjang == 'SMP' ? 'selected' : '' }}>SMP</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Kelas *</label>
-                                                    <input type="text" class="form-control" name="kelas" value="{{ $s->kelas }}" required>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                        <button type="submit" class="btn btn-primary">Update</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
                     @empty
                     <tr>
                         <td colspan="8" class="text-center py-4 text-muted">
@@ -138,6 +76,71 @@
         </div>
     </div>
 </div>
+
+@foreach($siswa as $s)
+<!-- Edit Modal -->
+<div class="modal fade" id="editSiswaModal{{ $s->id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ route('admin.siswa.update', $s->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Edit Siswa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Orang Tua *</label>
+                        <select class="form-select" name="orangtua_id" required>
+                            @foreach($orangTua as $ot)
+                            <option value="{{ $ot->id }}" {{ $s->orangtua_id == $ot->id ? 'selected' : '' }}>
+                                {{ $ot->nama_lengkap }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nama Lengkap *</label>
+                                <input type="text" class="form-control" name="nama_lengkap" value="{{ $s->nama_lengkap }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tanggal Lahir *</label>
+                                <input type="date" class="form-control" name="tanggal_lahir" value="{{ $s->tanggal_lahir->format('Y-m-d') }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Jenjang *</label>
+                                <select class="form-select" name="jenjang" required>
+                                    <option value="SD" {{ $s->jenjang == 'SD' ? 'selected' : '' }}>SD</option>
+                                    <option value="SMP" {{ $s->jenjang == 'SMP' ? 'selected' : '' }}>SMP</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Kelas *</label>
+                                <input type="text" class="form-control" name="kelas" value="{{ $s->kelas }}" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
 
 <!-- Add Siswa Modal -->
 <div class="modal fade" id="addSiswaModal" tabindex="-1">

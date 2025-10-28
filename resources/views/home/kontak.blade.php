@@ -98,7 +98,7 @@
             </div>
 
             <!-- Contact Form -->
-            <!-- <div class="col-lg-7">
+            <div class="col-lg-7">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body p-5">
                         <h3 class="fw-bold mb-4">Kirim Pesan</h3>
@@ -144,7 +144,7 @@
                         </div>
                     </div>
                 </div>
-            </div> -->
+            </div>
         </div>
     </div>
 </section>

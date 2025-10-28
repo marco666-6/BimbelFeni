@@ -18,6 +18,7 @@ use App\Models\Pengumuman;
 use App\Models\Settings;
 use App\Models\Notifikasi;
 use App\Helpers\FileUploadHelper;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 
 class AdminController extends Controller
@@ -472,21 +473,136 @@ class AdminController extends Controller
         return back()->with('success', 'Jadwal berhasil dihapus!');
     }
 
-    // ============ KEHADIRAN MANAGEMENT ============
+    // ============ KEHADIRAN MANAGEMENT (ENHANCED) ============
     
     /**
-     * Kelola Kehadiran
+     * Kelola Kehadiran - dengan filter tanggal dan absensi massal
      */
-    public function kehadiran()
+    public function kehadiran(Request $request)
     {
-        $kehadiran = Kehadiran::with(['jadwal', 'siswa'])->latest('tanggal_pertemuan')->get();
-        $jadwal = Jadwal::with('siswa')->get();
+        $tanggal = $request->get('tanggal', date('Y-m-d'));
+        $hari = Carbon::parse($tanggal)->locale('id')->dayName;
         
-        return view('admin.kehadiran', compact('kehadiran', 'jadwal'));
+        // Get jadwal hari ini
+        $jadwalHariIni = Jadwal::with('siswa')
+            ->where('hari', $hari)
+            ->get();
+        
+        // Get kehadiran untuk tanggal yang dipilih
+        $kehadiran = Kehadiran::with(['jadwal.siswa', 'siswa'])
+            ->whereDate('tanggal_pertemuan', $tanggal)
+            ->latest()
+            ->get();
+        
+        // Get all siswa untuk absensi massal
+        $allSiswa = Siswa::orderBy('nama_lengkap')->get();
+        
+        return view('admin.kehadiran', compact(
+            'kehadiran',
+            'jadwalHariIni',
+            'allSiswa',
+            'tanggal',
+            'hari'
+        ));
     }
 
     /**
-     * Store kehadiran
+     * Absensi Massal berdasarkan Jadwal Hari Ini
+     */
+    public function absensiMassalJadwal(Request $request)
+    {
+        $request->validate([
+            'tanggal_pertemuan' => 'required|date',
+            'jadwal_ids' => 'required|array',
+            'jadwal_ids.*' => 'exists:jadwal,id',
+        ]);
+
+        $tanggal = $request->tanggal_pertemuan;
+        $statusDefault = $request->get('status_default', 'hadir');
+        
+        $created = 0;
+        $skipped = 0;
+
+        foreach ($request->jadwal_ids as $jadwalId) {
+            $jadwal = Jadwal::find($jadwalId);
+            
+            // Check apakah sudah ada kehadiran untuk jadwal ini di tanggal tersebut
+            $exists = Kehadiran::where('jadwal_id', $jadwalId)
+                ->where('siswa_id', $jadwal->siswa_id)
+                ->whereDate('tanggal_pertemuan', $tanggal)
+                ->exists();
+            
+            if (!$exists) {
+                Kehadiran::create([
+                    'jadwal_id' => $jadwalId,
+                    'siswa_id' => $jadwal->siswa_id,
+                    'tanggal_pertemuan' => $tanggal,
+                    'status' => $statusDefault,
+                    'keterangan' => 'Absensi massal',
+                ]);
+                $created++;
+            } else {
+                $skipped++;
+            }
+        }
+
+        $message = "Berhasil membuat {$created} absensi.";
+        if ($skipped > 0) {
+            $message .= " {$skipped} absensi sudah ada sebelumnya.";
+        }
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Absensi Massal untuk Semua Siswa (tanpa jadwal spesifik)
+     */
+    public function absensiMassalSemua(Request $request)
+    {
+        $request->validate([
+            'tanggal_pertemuan' => 'required|date',
+            'siswa_ids' => 'required|array',
+            'siswa_ids.*' => 'exists:siswa,id',
+            'status' => 'required|array',
+            'status.*' => 'in:hadir,sakit,izin,alpha',
+        ]);
+
+        $tanggal = $request->tanggal_pertemuan;
+        $created = 0;
+        $updated = 0;
+
+        foreach ($request->siswa_ids as $index => $siswaId) {
+            $status = $request->status[$index] ?? 'hadir';
+            $keterangan = $request->keterangan[$index] ?? null;
+            
+            // Get jadwal siswa untuk hari ini
+            $hari = Carbon::parse($tanggal)->locale('id')->dayName;
+            $jadwal = Jadwal::where('siswa_id', $siswaId)
+                ->where('hari', $hari)
+                ->first();
+            
+            if ($jadwal) {
+                // Update atau create kehadiran
+                Kehadiran::updateOrCreate(
+                    [
+                        'jadwal_id' => $jadwal->id,
+                        'siswa_id' => $siswaId,
+                        'tanggal_pertemuan' => $tanggal,
+                    ],
+                    [
+                        'status' => $status,
+                        'keterangan' => $keterangan,
+                    ]
+                );
+                $created++;
+            }
+        }
+
+        return back()->with('success', "Berhasil menyimpan {$created} data kehadiran!");
+    }
+
+    /**
+     * Store kehadiran single
      */
     public function storeKehadiran(Request $request)
     {
@@ -497,6 +613,16 @@ class AdminController extends Controller
             'tanggal_pertemuan' => 'required|date',
             'keterangan' => 'nullable|string',
         ]);
+
+        // Check duplikasi
+        $exists = Kehadiran::where('jadwal_id', $request->jadwal_id)
+            ->where('siswa_id', $request->siswa_id)
+            ->whereDate('tanggal_pertemuan', $request->tanggal_pertemuan)
+            ->exists();
+
+        if ($exists) {
+            return back()->with('error', 'Kehadiran untuk jadwal ini pada tanggal tersebut sudah ada!');
+        }
 
         Kehadiran::create($request->all());
 
@@ -522,6 +648,25 @@ class AdminController extends Controller
     }
 
     /**
+     * Update status kehadiran (quick update via AJAX)
+     */
+    public function updateStatusKehadiran(Request $request, $id)
+    {
+        $kehadiran = Kehadiran::findOrFail($id);
+        
+        $request->validate([
+            'status' => 'required|in:hadir,sakit,izin,alpha',
+        ]);
+
+        $kehadiran->update(['status' => $request->status]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status kehadiran berhasil diupdate!'
+        ]);
+    }
+
+    /**
      * Delete kehadiran
      */
     public function deleteKehadiran($id)
@@ -530,6 +675,55 @@ class AdminController extends Controller
         $kehadiran->delete();
 
         return back()->with('success', 'Kehadiran berhasil dihapus!');
+    }
+
+    /**
+     * Get kehadiran data for edit (AJAX)
+     */
+    public function getKehadiranData($id)
+    {
+        $kehadiran = Kehadiran::findOrFail($id);
+        
+        return response()->json([
+            'id' => $kehadiran->id,
+            'tanggal_pertemuan' => $kehadiran->tanggal_pertemuan->format('Y-m-d'),
+            'status' => $kehadiran->status,
+            'keterangan' => $kehadiran->keterangan,
+        ]);
+    }
+
+    /**
+     * Export Laporan Kehadiran (periode)
+     */
+    public function laporanKehadiran(Request $request)
+    {
+        $tanggalMulai = $request->get('tanggal_mulai', date('Y-m-01'));
+        $tanggalAkhir = $request->get('tanggal_akhir', date('Y-m-t'));
+        
+        $kehadiran = Kehadiran::with(['jadwal.siswa', 'siswa'])
+            ->whereBetween('tanggal_pertemuan', [$tanggalMulai, $tanggalAkhir])
+            ->orderBy('tanggal_pertemuan', 'desc')
+            ->get();
+        
+        // Group by siswa untuk summary
+        $summary = $kehadiran->groupBy('siswa_id')->map(function($items) {
+            return [
+                'siswa' => $items->first()->siswa,
+                'total' => $items->count(),
+                'hadir' => $items->where('status', 'hadir')->count(),
+                'sakit' => $items->where('status', 'sakit')->count(),
+                'izin' => $items->where('status', 'izin')->count(),
+                'alpha' => $items->where('status', 'alpha')->count(),
+                'persentase' => round(($items->where('status', 'hadir')->count() / $items->count()) * 100, 2),
+            ];
+        });
+        
+        return view('admin.laporan-kehadiran', compact(
+            'kehadiran',
+            'summary',
+            'tanggalMulai',
+            'tanggalAkhir'
+        ));
     }
 
     // ============ MATERI & TUGAS MANAGEMENT ============

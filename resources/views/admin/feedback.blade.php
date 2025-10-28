@@ -105,138 +105,7 @@
                                 </td>
                             </tr>
 
-                            {{-- Modal Detail --}}
-                            <div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-info text-white">
-                                            <h5 class="modal-title"><i class="bi bi-eye"></i> Detail Feedback</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <div class="card border-primary">
-                                                        <div class="card-header bg-primary text-white">
-                                                            <strong>Informasi Orang Tua</strong>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <p><strong>Nama:</strong> {{ $item->orangTua->nama_lengkap ?? '-' }}</p>
-                                                            <p><strong>No. Telepon:</strong> {{ $item->orangTua->no_telepon ?? '-' }}</p>
-                                                            <p><strong>Email:</strong> {{ $item->orangTua->user->email ?? '-' }}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <div class="card border-info">
-                                                        <div class="card-header bg-info text-white">
-                                                            <strong>Informasi Siswa</strong>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <p><strong>Nama:</strong> {{ $item->siswa->nama_lengkap ?? '-' }}</p>
-                                                            <p><strong>Jenjang:</strong> {{ $item->siswa->jenjang ?? '-' }}</p>
-                                                            <p><strong>Kelas:</strong> {{ $item->siswa->kelas ?? '-' }}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div class="col-12 mb-3">
-                                                    <div class="card border-warning">
-                                                        <div class="card-header bg-warning text-dark">
-                                                            <strong>Feedback</strong>
-                                                            <small class="float-end">{{ \Carbon\Carbon::parse($item->tanggal_feedback)->format('d-m-Y H:i') }}</small>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <p style="white-space: pre-wrap;">{{ $item->isi_feedback }}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                @if($item->balasan_admin)
-                                                <div class="col-12 mb-3">
-                                                    <div class="card border-success">
-                                                        <div class="card-header bg-success text-white">
-                                                            <strong>Balasan Admin</strong>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <p style="white-space: pre-wrap;">{{ $item->balasan_admin }}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                @else
-                                                <div class="col-12 mb-3">
-                                                    <div class="alert alert-warning">
-                                                        <i class="bi bi-exclamation-triangle"></i> Feedback ini belum dibalas
-                                                    </div>
-                                                </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Modal Balas Feedback --}}
-                            <div class="modal fade" id="modalBalas{{ $item->id }}" tabindex="-1">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <form action="{{ route('admin.feedback.balas', $item->id) }}" method="POST">
-                                            @csrf
-                                            @method('PUT')
-                                            <div class="modal-header bg-success text-white">
-                                                <h5 class="modal-title"><i class="bi bi-reply"></i> Balas Feedback</h5>
-                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <!-- Info Feedback -->
-                                                <div class="card mb-3 border-info">
-                                                    <div class="card-header bg-info text-white">
-                                                        <strong>Feedback dari Orang Tua</strong>
-                                                    </div>
-                                                    <div class="card-body">
-                                                        <div class="row mb-2">
-                                                            <div class="col-md-4"><strong>Orang Tua:</strong></div>
-                                                            <div class="col-md-8">{{ $item->orangTua->nama_lengkap ?? '-' }}</div>
-                                                        </div>
-                                                        <div class="row mb-2">
-                                                            <div class="col-md-4"><strong>Siswa:</strong></div>
-                                                            <div class="col-md-8">{{ $item->siswa->nama_lengkap ?? '-' }} ({{ $item->siswa->jenjang ?? '-' }} - {{ $item->siswa->kelas ?? '-' }})</div>
-                                                        </div>
-                                                        <div class="row mb-2">
-                                                            <div class="col-md-4"><strong>Tanggal:</strong></div>
-                                                            <div class="col-md-8">{{ \Carbon\Carbon::parse($item->tanggal_feedback)->format('d-m-Y H:i') }}</div>
-                                                        </div>
-                                                        <hr>
-                                                        <div class="row">
-                                                            <div class="col-12">
-                                                                <strong>Isi Feedback:</strong>
-                                                                <div class="mt-2 p-3 bg-light rounded">{{ $item->isi_feedback }}</div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Form Balasan -->
-                                                <div class="mb-3">
-                                                    <label class="form-label">Balasan Admin <span class="text-danger">*</span></label>
-                                                    <textarea name="balasan_admin" class="form-control" rows="5" required placeholder="Tulis balasan untuk orang tua...">{{ $item->balasan_admin }}</textarea>
-                                                </div>
-
-                                                <div class="alert alert-info">
-                                                    <i class="bi bi-info-circle"></i> Orang tua akan menerima notifikasi setelah Anda mengirim balasan ini.
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                <button type="submit" class="btn btn-success">Kirim Balasan</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+                            
 
                             @empty
                             <tr>
@@ -250,6 +119,141 @@
         </div>
     </div>
 </div>
+
+@foreach($feedback as $item)
+{{-- Modal Detail --}}
+<div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-eye"></i> Detail Feedback</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <strong>Informasi Orang Tua</strong>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Nama:</strong> {{ $item->orangTua->nama_lengkap ?? '-' }}</p>
+                                <p><strong>No. Telepon:</strong> {{ $item->orangTua->no_telepon ?? '-' }}</p>
+                                <p><strong>Email:</strong> {{ $item->orangTua->user->email ?? '-' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <strong>Informasi Siswa</strong>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Nama:</strong> {{ $item->siswa->nama_lengkap ?? '-' }}</p>
+                                <p><strong>Jenjang:</strong> {{ $item->siswa->jenjang ?? '-' }}</p>
+                                <p><strong>Kelas:</strong> {{ $item->siswa->kelas ?? '-' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 mb-3">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <strong>Feedback</strong>
+                                <small class="float-end">{{ \Carbon\Carbon::parse($item->tanggal_feedback)->format('d-m-Y H:i') }}</small>
+                            </div>
+                            <div class="card-body">
+                                <p style="white-space: pre-wrap;">{{ $item->isi_feedback }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($item->balasan_admin)
+                    <div class="col-12 mb-3">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <strong>Balasan Admin</strong>
+                            </div>
+                            <div class="card-body">
+                                <p style="white-space: pre-wrap;">{{ $item->balasan_admin }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    @else
+                    <div class="col-12 mb-3">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Feedback ini belum dibalas
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Balas Feedback --}}
+<div class="modal fade" id="modalBalas{{ $item->id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ route('admin.feedback.balas', $item->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-reply"></i> Balas Feedback</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Info Feedback -->
+                    <div class="card mb-3 border-info">
+                        <div class="card-header bg-info text-white">
+                            <strong>Feedback dari Orang Tua</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-md-4"><strong>Orang Tua:</strong></div>
+                                <div class="col-md-8">{{ $item->orangTua->nama_lengkap ?? '-' }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4"><strong>Siswa:</strong></div>
+                                <div class="col-md-8">{{ $item->siswa->nama_lengkap ?? '-' }} ({{ $item->siswa->jenjang ?? '-' }} - {{ $item->siswa->kelas ?? '-' }})</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4"><strong>Tanggal:</strong></div>
+                                <div class="col-md-8">{{ \Carbon\Carbon::parse($item->tanggal_feedback)->format('d-m-Y H:i') }}</div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-12">
+                                    <strong>Isi Feedback:</strong>
+                                    <div class="mt-2 p-3 bg-light rounded">{{ $item->isi_feedback }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Balasan -->
+                    <div class="mb-3">
+                        <label class="form-label">Balasan Admin <span class="text-danger">*</span></label>
+                        <textarea name="balasan_admin" class="form-control" rows="5" required placeholder="Tulis balasan untuk orang tua...">{{ $item->balasan_admin }}</textarea>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Orang tua akan menerima notifikasi setelah Anda mengirim balasan ini.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success">Kirim Balasan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
 @endsection
 
 @push('scripts')

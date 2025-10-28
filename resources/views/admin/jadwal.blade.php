@@ -33,30 +33,7 @@
                         </td>
                     </tr>
                     
-                    <div class="modal fade" id="editModal{{ $j->id }}" tabindex="-1">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <form action="{{ route('admin.jadwal.update', $j->id) }}" method="POST">
-                                    @csrf @method('PUT')
-                                    <div class="modal-header"><h5 class="modal-title fw-bold">Edit Jadwal</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                                    <div class="modal-body">
-                                        <div class="mb-3"><label>Siswa *</label><select class="form-select" name="siswa_id" required>@foreach($siswa as $s)<option value="{{ $s->id }}" {{ $j->siswa_id == $s->id ? 'selected' : '' }}>{{ $s->nama_lengkap }} ({{ $s->jenjang }} - {{ $s->kelas }})</option>@endforeach</select></div>
-                                        <div class="row">
-                                            <div class="col-md-6"><div class="mb-3"><label>Mata Pelajaran *</label><input type="text" class="form-control" name="mata_pelajaran" value="{{ $j->mata_pelajaran }}" required></div></div>
-                                            <div class="col-md-6"><div class="mb-3"><label>Nama Guru *</label><input type="text" class="form-control" name="nama_guru" value="{{ $j->nama_guru }}" required></div></div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-4"><div class="mb-3"><label>Hari *</label><select class="form-select" name="hari" required><option value="Senin" {{ $j->hari == 'Senin' ? 'selected' : '' }}>Senin</option><option value="Selasa" {{ $j->hari == 'Selasa' ? 'selected' : '' }}>Selasa</option><option value="Rabu" {{ $j->hari == 'Rabu' ? 'selected' : '' }}>Rabu</option><option value="Kamis" {{ $j->hari == 'Kamis' ? 'selected' : '' }}>Kamis</option><option value="Jumat" {{ $j->hari == 'Jumat' ? 'selected' : '' }}>Jumat</option><option value="Sabtu" {{ $j->hari == 'Sabtu' ? 'selected' : '' }}>Sabtu</option><option value="Minggu" {{ $j->hari == 'Minggu' ? 'selected' : '' }}>Minggu</option></select></div></div>
-                                            <div class="col-md-4"><div class="mb-3"><label>Jam Mulai *</label><input type="time" class="form-control" name="jam_mulai" value="{{ \Carbon\Carbon::parse($j->jam_mulai)->format('H:i') }}" required></div></div>
-                                            <div class="col-md-4"><div class="mb-3"><label>Jam Selesai *</label><input type="time" class="form-control" name="jam_selesai" value="{{ \Carbon\Carbon::parse($j->jam_selesai)->format('H:i') }}" required></div></div>
-                                        </div>
-                                        <div class="mb-3"><label>Ruangan</label><input type="text" class="form-control" name="ruangan" value="{{ $j->ruangan }}"></div>
-                                    </div>
-                                    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Update</button></div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+                    
                     @empty
                     <tr><td colspan="7" class="text-center py-4 text-muted"><i class="bi bi-calendar-x" style="font-size: 3rem;"></i><p class="mt-2">Belum ada jadwal</p></td></tr>
                     @endforelse
@@ -65,6 +42,33 @@
         </div>
     </div>
 </div>
+
+@foreach($jadwal as $j)
+<div class="modal fade" id="editModal{{ $j->id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ route('admin.jadwal.update', $j->id) }}" method="POST">
+                @csrf @method('PUT')
+                <div class="modal-header"><h5 class="modal-title fw-bold">Edit Jadwal</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="mb-3"><label>Siswa *</label><select class="form-select" name="siswa_id" required>@foreach($siswa as $s)<option value="{{ $s->id }}" {{ $j->siswa_id == $s->id ? 'selected' : '' }}>{{ $s->nama_lengkap }} ({{ $s->jenjang }} - {{ $s->kelas }})</option>@endforeach</select></div>
+                    <div class="row">
+                        <div class="col-md-6"><div class="mb-3"><label>Mata Pelajaran *</label><input type="text" class="form-control" name="mata_pelajaran" value="{{ $j->mata_pelajaran }}" required></div></div>
+                        <div class="col-md-6"><div class="mb-3"><label>Nama Guru *</label><input type="text" class="form-control" name="nama_guru" value="{{ $j->nama_guru }}" required></div></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4"><div class="mb-3"><label>Hari *</label><select class="form-select" name="hari" required><option value="Senin" {{ $j->hari == 'Senin' ? 'selected' : '' }}>Senin</option><option value="Selasa" {{ $j->hari == 'Selasa' ? 'selected' : '' }}>Selasa</option><option value="Rabu" {{ $j->hari == 'Rabu' ? 'selected' : '' }}>Rabu</option><option value="Kamis" {{ $j->hari == 'Kamis' ? 'selected' : '' }}>Kamis</option><option value="Jumat" {{ $j->hari == 'Jumat' ? 'selected' : '' }}>Jumat</option><option value="Sabtu" {{ $j->hari == 'Sabtu' ? 'selected' : '' }}>Sabtu</option><option value="Minggu" {{ $j->hari == 'Minggu' ? 'selected' : '' }}>Minggu</option></select></div></div>
+                        <div class="col-md-4"><div class="mb-3"><label>Jam Mulai *</label><input type="time" class="form-control" name="jam_mulai" value="{{ \Carbon\Carbon::parse($j->jam_mulai)->format('H:i') }}" required></div></div>
+                        <div class="col-md-4"><div class="mb-3"><label>Jam Selesai *</label><input type="time" class="form-control" name="jam_selesai" value="{{ \Carbon\Carbon::parse($j->jam_selesai)->format('H:i') }}" required></div></div>
+                    </div>
+                    <div class="mb-3"><label>Ruangan</label><input type="text" class="form-control" name="ruangan" value="{{ $j->ruangan }}"></div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Update</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
 
 <div class="modal fade" id="addModal" tabindex="-1">
     <div class="modal-dialog modal-lg">

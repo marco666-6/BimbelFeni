@@ -125,167 +125,7 @@
                                 </td>
                             </tr>
 
-                            {{-- Modal Detail Pengumpulan --}}
-                            <div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-info text-white">
-                                            <h5 class="modal-title"><i class="bi bi-eye"></i> Detail Pengumpulan Tugas</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="row">
-                                                <div class="col-md-6 mb-3">
-                                                    <div class="card border-primary">
-                                                        <div class="card-header bg-primary text-white">
-                                                            <strong>Informasi Siswa</strong>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <p><strong>Nama:</strong> {{ $item->siswa->nama_lengkap }}</p>
-                                                            <p><strong>Jenjang:</strong> {{ $item->siswa->jenjang }}</p>
-                                                            <p><strong>Kelas:</strong> {{ $item->siswa->kelas }}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <div class="card border-info">
-                                                        <div class="card-header bg-info text-white">
-                                                            <strong>Informasi Tugas</strong>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <p><strong>Judul:</strong> {{ $item->materiTugas->judul }}</p>
-                                                            <p><strong>Mata Pelajaran:</strong> {{ $item->materiTugas->mata_pelajaran }}</p>
-                                                            @if($item->materiTugas->deadline)
-                                                                <p><strong>Deadline:</strong> {{ \Carbon\Carbon::parse($item->materiTugas->deadline)->format('d/m/Y H:i') }}</p>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                                @php
-                                                    $isTerlambat = $item->materiTugas->deadline && $item->tanggal_pengumpulan > $item->materiTugas->deadline;
-                                                @endphp
-                                                <div class="col-12 mb-3">
-                                                    <div class="card {{ $isTerlambat ? 'border-danger' : 'border-success' }}">
-                                                        <div class="card-header bg-{{ $isTerlambat ? 'danger' : 'success' }} text-white">
-                                                            <strong>Status Pengumpulan</strong>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <p><strong>Tanggal Pengumpulan:</strong> {{ \Carbon\Carbon::parse($item->tanggal_pengumpulan)->format('d/m/Y H:i') }}</p>
-                                                            @if($isTerlambat)
-                                                                <p class="text-danger"><i class="bi bi-exclamation-triangle"></i> <strong>Tugas dikumpulkan terlambat</strong></p>
-                                                            @else
-                                                                <p class="text-success"><i class="bi bi-check-circle"></i> <strong>Tugas dikumpulkan tepat waktu</strong></p>
-                                                            @endif
-                                                            @if($item->file_path)
-                                                                <p><strong>File:</strong> 
-                                                                    <a href="{{ asset('storage/' . $item->file_path) }}" target="_blank" class="btn btn-sm btn-primary">
-                                                                        <i class="bi bi-download"></i> Download File
-                                                                    </a>
-                                                                </p>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                @if($item->nilai !== null)
-                                                    @php
-                                                        $grade = $item->nilai >= 90 ? 'A' : ($item->nilai >= 80 ? 'B+' : ($item->nilai >= 75 ? 'B' : ($item->nilai >= 70 ? 'C+' : ($item->nilai >= 60 ? 'C' : ($item->nilai >= 50 ? 'D' : 'E')))));
-                                                    @endphp
-                                                    <div class="col-12 mb-3">
-                                                        <div class="card border-warning">
-                                                            <div class="card-header bg-warning text-dark">
-                                                                <strong>Penilaian</strong>
-                                                            </div>
-                                                            <div class="card-body">
-                                                                <p><strong>Nilai:</strong> <span class="badge bg-primary fs-5">{{ $item->nilai }} ({{ $grade }})</span></p>
-                                                                @if($item->feedback_guru)
-                                                                    <p><strong>Feedback Guru:</strong><br>{{ $item->feedback_guru }}</p>
-                                                                @else
-                                                                    <p class="text-muted">Tidak ada feedback</p>
-                                                                @endif
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                @else
-                                                    <div class="col-12 mb-3">
-                                                        <div class="alert alert-warning">
-                                                            <i class="bi bi-exclamation-triangle"></i> Tugas ini belum dinilai
-                                                        </div>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Modal Nilai Tugas --}}
-                            <div class="modal fade" id="modalNilai{{ $item->id }}" tabindex="-1">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <form action="{{ route('admin.pengumpulan-tugas.nilai', $item->id) }}" method="POST">
-                                            @csrf
-                                            @method('PUT')
-                                            <div class="modal-header bg-success text-white">
-                                                <h5 class="modal-title"><i class="bi bi-award"></i> Nilai Tugas</h5>
-                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <!-- Info Siswa & Tugas -->
-                                                <div class="card mb-3 border-info">
-                                                    <div class="card-body">
-                                                        <div class="row">
-                                                            <div class="col-md-6">
-                                                                <strong>Siswa:</strong> {{ $item->siswa->nama_lengkap }} ({{ $item->siswa->jenjang }} - {{ $item->siswa->kelas }})
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                <strong>Tanggal Pengumpulan:</strong> {{ \Carbon\Carbon::parse($item->tanggal_pengumpulan)->format('d/m/Y H:i') }}
-                                                            </div>
-                                                            <div class="col-12 mt-2">
-                                                                <strong>Judul Tugas:</strong> {{ $item->materiTugas->judul }}
-                                                            </div>
-                                                            <div class="col-12 mt-2">
-                                                                <strong>Mata Pelajaran:</strong> {{ $item->materiTugas->mata_pelajaran }}
-                                                            </div>
-                                                            @if($item->file_path)
-                                                                <div class="col-12 mt-2">
-                                                                    <a href="{{ asset('storage/' . $item->file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                                                        <i class="bi bi-download"></i> Download File Tugas
-                                                                    </a>
-                                                                </div>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Form Penilaian -->
-                                                <div class="mb-3">
-                                                    <label class="form-label">Nilai (0-100) <span class="text-danger">*</span></label>
-                                                    <input type="number" name="nilai" class="form-control form-control-lg" min="0" max="100" required placeholder="Masukkan nilai" value="{{ $item->nilai }}">
-                                                    <div class="mt-2">
-                                                        <small class="text-muted">
-                                                            Keterangan: A (90-100), B+ (80-89), B (75-79), C+ (70-74), C (60-69), D (50-59), E (<50)
-                                                        </small>
-                                                    </div>
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label class="form-label">Feedback untuk Siswa</label>
-                                                    <textarea name="feedback_guru" class="form-control" rows="4" placeholder="Berikan feedback atau komentar untuk siswa (opsional)">{{ $item->feedback_guru }}</textarea>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                <button type="submit" class="btn btn-success">Simpan Nilai</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+                            
 
                             @empty
                             <tr>
@@ -299,6 +139,170 @@
         </div>
     </div>
 </div>
+
+@foreach($pengumpulan as $item)
+{{-- Modal Detail Pengumpulan --}}
+<div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-eye"></i> Detail Pengumpulan Tugas</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <strong>Informasi Siswa</strong>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Nama:</strong> {{ $item->siswa->nama_lengkap }}</p>
+                                <p><strong>Jenjang:</strong> {{ $item->siswa->jenjang }}</p>
+                                <p><strong>Kelas:</strong> {{ $item->siswa->kelas }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <strong>Informasi Tugas</strong>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Judul:</strong> {{ $item->materiTugas->judul }}</p>
+                                <p><strong>Mata Pelajaran:</strong> {{ $item->materiTugas->mata_pelajaran }}</p>
+                                @if($item->materiTugas->deadline)
+                                    <p><strong>Deadline:</strong> {{ \Carbon\Carbon::parse($item->materiTugas->deadline)->format('d/m/Y H:i') }}</p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @php
+                        $isTerlambat = $item->materiTugas->deadline && $item->tanggal_pengumpulan > $item->materiTugas->deadline;
+                    @endphp
+                    <div class="col-12 mb-3">
+                        <div class="card {{ $isTerlambat ? 'border-danger' : 'border-success' }}">
+                            <div class="card-header bg-{{ $isTerlambat ? 'danger' : 'success' }} text-white">
+                                <strong>Status Pengumpulan</strong>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Tanggal Pengumpulan:</strong> {{ \Carbon\Carbon::parse($item->tanggal_pengumpulan)->format('d/m/Y H:i') }}</p>
+                                @if($isTerlambat)
+                                    <p class="text-danger"><i class="bi bi-exclamation-triangle"></i> <strong>Tugas dikumpulkan terlambat</strong></p>
+                                @else
+                                    <p class="text-success"><i class="bi bi-check-circle"></i> <strong>Tugas dikumpulkan tepat waktu</strong></p>
+                                @endif
+                                @if($item->file_path)
+                                    <p><strong>File:</strong> 
+                                        <a href="{{ asset('storage/' . $item->file_path) }}" target="_blank" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-download"></i> Download File
+                                        </a>
+                                    </p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($item->nilai !== null)
+                        @php
+                            $grade = $item->nilai >= 90 ? 'A' : ($item->nilai >= 80 ? 'B+' : ($item->nilai >= 75 ? 'B' : ($item->nilai >= 70 ? 'C+' : ($item->nilai >= 60 ? 'C' : ($item->nilai >= 50 ? 'D' : 'E')))));
+                        @endphp
+                        <div class="col-12 mb-3">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <strong>Penilaian</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Nilai:</strong> <span class="badge bg-primary fs-5">{{ $item->nilai }} ({{ $grade }})</span></p>
+                                    @if($item->feedback_guru)
+                                        <p><strong>Feedback Guru:</strong><br>{{ $item->feedback_guru }}</p>
+                                    @else
+                                        <p class="text-muted">Tidak ada feedback</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="col-12 mb-3">
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i> Tugas ini belum dinilai
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Nilai Tugas --}}
+<div class="modal fade" id="modalNilai{{ $item->id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ route('admin.pengumpulan-tugas.nilai', $item->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-award"></i> Nilai Tugas</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Info Siswa & Tugas -->
+                    <div class="card mb-3 border-info">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Siswa:</strong> {{ $item->siswa->nama_lengkap }} ({{ $item->siswa->jenjang }} - {{ $item->siswa->kelas }})
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Tanggal Pengumpulan:</strong> {{ \Carbon\Carbon::parse($item->tanggal_pengumpulan)->format('d/m/Y H:i') }}
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <strong>Judul Tugas:</strong> {{ $item->materiTugas->judul }}
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <strong>Mata Pelajaran:</strong> {{ $item->materiTugas->mata_pelajaran }}
+                                </div>
+                                @if($item->file_path)
+                                    <div class="col-12 mt-2">
+                                        <a href="{{ asset('storage/' . $item->file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-download"></i> Download File Tugas
+                                        </a>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Penilaian -->
+                    <div class="mb-3">
+                        <label class="form-label">Nilai (0-100) <span class="text-danger">*</span></label>
+                        <input type="number" name="nilai" class="form-control form-control-lg" min="0" max="100" required placeholder="Masukkan nilai" value="{{ $item->nilai }}">
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                Keterangan: A (90-100), B+ (80-89), B (75-79), C+ (70-74), C (60-69), D (50-59), E (<50)
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Feedback untuk Siswa</label>
+                        <textarea name="feedback_guru" class="form-control" rows="4" placeholder="Berikan feedback atau komentar untuk siswa (opsional)">{{ $item->feedback_guru }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success">Simpan Nilai</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
 @endsection
 
 @push('scripts')

@@ -78,91 +78,7 @@
                                 </td>
                             </tr>
 
-                            <!-- Modal Edit -->
-                            <div class="modal fade" id="modalEdit{{ $item->id }}" tabindex="-1">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <form action="{{ route('admin.pengumuman.update', $item->id) }}" method="POST">
-                                            @csrf
-                                            @method('PUT')
-                                            <div class="modal-header bg-warning text-dark">
-                                                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Pengumuman</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Judul <span class="text-danger">*</span></label>
-                                                    <input type="text" name="judul" class="form-control" value="{{ $item->judul }}" required>
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label class="form-label">Isi Pengumuman <span class="text-danger">*</span></label>
-                                                    <textarea name="isi" class="form-control" rows="6" required>{{ $item->isi }}</textarea>
-                                                </div>
-
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label">Target <span class="text-danger">*</span></label>
-                                                        <select name="target" class="form-select" required>
-                                                            <option value="semua" {{ $item->target == 'semua' ? 'selected' : '' }}>Semua Pengguna</option>
-                                                            <option value="orangtua" {{ $item->target == 'orangtua' ? 'selected' : '' }}>Orang Tua</option>
-                                                            <option value="siswa" {{ $item->target == 'siswa' ? 'selected' : '' }}>Siswa</option>
-                                                        </select>
-                                                    </div>
-
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label">Status <span class="text-danger">*</span></label>
-                                                        <select name="status" class="form-select" required>
-                                                            <option value="draft" {{ $item->status == 'draft' ? 'selected' : '' }}>Draft</option>
-                                                            <option value="published" {{ $item->status == 'published' ? 'selected' : '' }}>Published</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                <button type="submit" class="btn btn-warning">Update</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Modal Detail -->
-                            <div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-info text-white">
-                                            <h5 class="modal-title"><i class="bi bi-eye"></i> Detail Pengumuman</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="card border-0">
-                                                <div class="card-body">
-                                                    <h4 class="mb-3">{{ $item->judul }}</h4>
-                                                    <div class="mb-3">
-                                                        <span class="badge bg-{{ $item->status_badge_color }}">{{ $item->status_label }}</span>
-                                                        <span class="badge bg-{{ $item->target_badge_color }} ms-2">Target: {{ $item->target_label }}</span>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <small class="text-muted">
-                                                            <i class="bi bi-person"></i> Dibuat oleh: {{ $item->creator->username }}
-                                                            @if($item->tanggal_publikasi)
-                                                                <br><i class="bi bi-calendar"></i> Dipublikasikan: {{ $item->tanggal_publikasi->format('d/m/Y H:i') }}
-                                                            @endif
-                                                        </small>
-                                                    </div>
-                                                    <hr>
-                                                    <div style="white-space: pre-wrap;">{{ $item->isi }}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            
 
                             @empty
                             <tr>
@@ -176,6 +92,94 @@
         </div>
     </div>
 </div>
+
+@foreach($pengumuman as $item)
+<!-- Modal Edit -->
+<div class="modal fade" id="modalEdit{{ $item->id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ route('admin.pengumuman.update', $item->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Pengumuman</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Judul <span class="text-danger">*</span></label>
+                        <input type="text" name="judul" class="form-control" value="{{ $item->judul }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Isi Pengumuman <span class="text-danger">*</span></label>
+                        <textarea name="isi" class="form-control" rows="6" required>{{ $item->isi }}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Target <span class="text-danger">*</span></label>
+                            <select name="target" class="form-select" required>
+                                <option value="semua" {{ $item->target == 'semua' ? 'selected' : '' }}>Semua Pengguna</option>
+                                <option value="orangtua" {{ $item->target == 'orangtua' ? 'selected' : '' }}>Orang Tua</option>
+                                <option value="siswa" {{ $item->target == 'siswa' ? 'selected' : '' }}>Siswa</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status <span class="text-danger">*</span></label>
+                            <select name="status" class="form-select" required>
+                                <option value="draft" {{ $item->status == 'draft' ? 'selected' : '' }}>Draft</option>
+                                <option value="published" {{ $item->status == 'published' ? 'selected' : '' }}>Published</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-warning">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detail -->
+<div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-eye"></i> Detail Pengumuman</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="card border-0">
+                    <div class="card-body">
+                        <h4 class="mb-3">{{ $item->judul }}</h4>
+                        <div class="mb-3">
+                            <span class="badge bg-{{ $item->status_badge_color }}">{{ $item->status_label }}</span>
+                            <span class="badge bg-{{ $item->target_badge_color }} ms-2">Target: {{ $item->target_label }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="bi bi-person"></i> Dibuat oleh: {{ $item->creator->username }}
+                                @if($item->tanggal_publikasi)
+                                    <br><i class="bi bi-calendar"></i> Dipublikasikan: {{ $item->tanggal_publikasi->format('d/m/Y H:i') }}
+                                @endif
+                            </small>
+                        </div>
+                        <hr>
+                        <div style="white-space: pre-wrap;">{{ $item->isi }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endforeach
 
 <!-- Modal Tambah Pengumuman -->
 <div class="modal fade" id="modalTambahPengumuman" tabindex="-1">

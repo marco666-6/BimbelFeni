@@ -106,126 +106,7 @@
                                 </td>
                             </tr>
 
-                            <!-- Modal Edit -->
-                            <div class="modal fade" id="modalEdit{{ $item->id }}" tabindex="-1">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <form action="{{ route('admin.materi-tugas.update', $item->id) }}" method="POST" enctype="multipart/form-data">
-                                            @csrf
-                                            @method('PUT')
-                                            <div class="modal-header bg-warning text-dark">
-                                                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit {{ $item->tipe_label }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <input type="hidden" name="tipe" value="{{ $item->tipe }}">
-                                                <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label">Jenjang <span class="text-danger">*</span></label>
-                                                        <select name="jenjang" class="form-select" required>
-                                                            <option value="SD" {{ $item->jenjang == 'SD' ? 'selected' : '' }}>SD</option>
-                                                            <option value="SMP" {{ $item->jenjang == 'SMP' ? 'selected' : '' }}>SMP</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-6 mb-3">
-                                                        <label class="form-label">Mata Pelajaran <span class="text-danger">*</span></label>
-                                                        <input type="text" name="mata_pelajaran" class="form-control" value="{{ $item->mata_pelajaran }}" required>
-                                                    </div>
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label class="form-label">Judul <span class="text-danger">*</span></label>
-                                                    <input type="text" name="judul" class="form-control" value="{{ $item->judul }}" required>
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label class="form-label">Deskripsi <span class="text-danger">*</span></label>
-                                                    <textarea name="deskripsi" class="form-control" rows="4" required>{{ $item->deskripsi }}</textarea>
-                                                </div>
-
-                                                @if($item->tipe === 'tugas')
-                                                <div class="mb-3">
-                                                    <label class="form-label">Deadline</label>
-                                                    <input type="datetime-local" name="deadline" class="form-control" value="{{ $item->deadline ? $item->deadline->format('Y-m-d\TH:i') : '' }}">
-                                                </div>
-                                                @endif
-
-                                                <div class="mb-3">
-                                                    <label class="form-label">Upload File Baru (Opsional)</label>
-                                                    <input type="file" name="file_path" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png">
-                                                    @if($item->file_path)
-                                                        <small class="text-success d-block mt-1"><i class="bi bi-check-circle"></i> File saat ini: {{ basename($item->file_path) }}</small>
-                                                    @endif
-                                                    <small class="text-muted d-block">Kosongkan jika tidak ingin mengganti file</small>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                <button type="submit" class="btn btn-warning">Update</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Modal Detail -->
-                            <div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-info text-white">
-                                            <h5 class="modal-title"><i class="bi bi-eye"></i> Detail {{ $item->tipe_label }}</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="row">
-                                                <div class="col-md-6 mb-2"><strong>Tipe:</strong></div>
-                                                <div class="col-md-6 mb-2"><span class="badge bg-{{ $item->tipe_badge_color }}">{{ $item->tipe_label }}</span></div>
-                                                
-                                                <div class="col-md-6 mb-2"><strong>Jenjang:</strong></div>
-                                                <div class="col-md-6 mb-2"><span class="badge bg-info">{{ $item->jenjang }}</span></div>
-                                                
-                                                <div class="col-md-6 mb-2"><strong>Mata Pelajaran:</strong></div>
-                                                <div class="col-md-6 mb-2">{{ $item->mata_pelajaran }}</div>
-                                                
-                                                <div class="col-12 mb-2"><hr></div>
-                                                
-                                                <div class="col-12 mb-2"><strong>Judul:</strong></div>
-                                                <div class="col-12 mb-3">{{ $item->judul }}</div>
-                                                
-                                                <div class="col-12 mb-2"><strong>Deskripsi:</strong></div>
-                                                <div class="col-12 mb-3">{{ $item->deskripsi }}</div>
-                                                
-                                                @if($item->deadline)
-                                                <div class="col-12 mb-2"><hr></div>
-                                                <div class="col-md-6 mb-2"><strong>Deadline:</strong></div>
-                                                <div class="col-md-6 mb-2">{{ $item->deadline->format('d/m/Y H:i') }}</div>
-                                                <div class="col-md-6 mb-2"><strong>Status:</strong></div>
-                                                <div class="col-md-6 mb-2">
-                                                    @if($item->isDeadlinePassed())
-                                                        <span class="badge bg-danger">Deadline Lewat</span>
-                                                    @else
-                                                        <span class="badge bg-success">{{ $item->sisa_waktu_deadline }}</span>
-                                                    @endif
-                                                </div>
-                                                @endif
-                                                
-                                                @if($item->file_path)
-                                                <div class="col-12 mb-2"><hr></div>
-                                                <div class="col-12 mb-2">
-                                                    <strong>File:</strong><br>
-                                                    <a href="{{ $item->file_url }}" target="_blank" class="btn btn-primary btn-sm mt-2">
-                                                        <i class="bi bi-download"></i> Download File
-                                                    </a>
-                                                </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            
 
                             @empty
                             <tr>
@@ -239,6 +120,129 @@
         </div>
     </div>
 </div>
+
+@foreach($materiTugas as $item)
+<!-- Modal Edit -->
+<div class="modal fade" id="modalEdit{{ $item->id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ route('admin.materi-tugas.update', $item->id) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit {{ $item->tipe_label }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="tipe" value="{{ $item->tipe }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Jenjang <span class="text-danger">*</span></label>
+                            <select name="jenjang" class="form-select" required>
+                                <option value="SD" {{ $item->jenjang == 'SD' ? 'selected' : '' }}>SD</option>
+                                <option value="SMP" {{ $item->jenjang == 'SMP' ? 'selected' : '' }}>SMP</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Mata Pelajaran <span class="text-danger">*</span></label>
+                            <input type="text" name="mata_pelajaran" class="form-control" value="{{ $item->mata_pelajaran }}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Judul <span class="text-danger">*</span></label>
+                        <input type="text" name="judul" class="form-control" value="{{ $item->judul }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Deskripsi <span class="text-danger">*</span></label>
+                        <textarea name="deskripsi" class="form-control" rows="4" required>{{ $item->deskripsi }}</textarea>
+                    </div>
+
+                    @if($item->tipe === 'tugas')
+                    <div class="mb-3">
+                        <label class="form-label">Deadline</label>
+                        <input type="datetime-local" name="deadline" class="form-control" value="{{ $item->deadline ? $item->deadline->format('Y-m-d\TH:i') : '' }}">
+                    </div>
+                    @endif
+
+                    <div class="mb-3">
+                        <label class="form-label">Upload File Baru (Opsional)</label>
+                        <input type="file" name="file_path" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png">
+                        @if($item->file_path)
+                            <small class="text-success d-block mt-1"><i class="bi bi-check-circle"></i> File saat ini: {{ basename($item->file_path) }}</small>
+                        @endif
+                        <small class="text-muted d-block">Kosongkan jika tidak ingin mengganti file</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-warning">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detail -->
+<div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-eye"></i> Detail {{ $item->tipe_label }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-2"><strong>Tipe:</strong></div>
+                    <div class="col-md-6 mb-2"><span class="badge bg-{{ $item->tipe_badge_color }}">{{ $item->tipe_label }}</span></div>
+                    
+                    <div class="col-md-6 mb-2"><strong>Jenjang:</strong></div>
+                    <div class="col-md-6 mb-2"><span class="badge bg-info">{{ $item->jenjang }}</span></div>
+                    
+                    <div class="col-md-6 mb-2"><strong>Mata Pelajaran:</strong></div>
+                    <div class="col-md-6 mb-2">{{ $item->mata_pelajaran }}</div>
+                    
+                    <div class="col-12 mb-2"><hr></div>
+                    
+                    <div class="col-12 mb-2"><strong>Judul:</strong></div>
+                    <div class="col-12 mb-3">{{ $item->judul }}</div>
+                    
+                    <div class="col-12 mb-2"><strong>Deskripsi:</strong></div>
+                    <div class="col-12 mb-3">{{ $item->deskripsi }}</div>
+                    
+                    @if($item->deadline)
+                    <div class="col-12 mb-2"><hr></div>
+                    <div class="col-md-6 mb-2"><strong>Deadline:</strong></div>
+                    <div class="col-md-6 mb-2">{{ $item->deadline->format('d/m/Y H:i') }}</div>
+                    <div class="col-md-6 mb-2"><strong>Status:</strong></div>
+                    <div class="col-md-6 mb-2">
+                        @if($item->isDeadlinePassed())
+                            <span class="badge bg-danger">Deadline Lewat</span>
+                        @else
+                            <span class="badge bg-success">{{ $item->sisa_waktu_deadline }}</span>
+                        @endif
+                    </div>
+                    @endif
+                    
+                    @if($item->file_path)
+                    <div class="col-12 mb-2"><hr></div>
+                    <div class="col-12 mb-2">
+                        <strong>File:</strong><br>
+                        <a href="{{ $item->file_url }}" target="_blank" class="btn btn-primary btn-sm mt-2">
+                            <i class="bi bi-download"></i> Download File
+                        </a>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endforeach
 
 <!-- Modal Tambah Materi/Tugas -->
 <div class="modal fade" id="modalTambahMateriTugas" tabindex="-1">
