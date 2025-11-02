@@ -14,7 +14,7 @@
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead><tr><th>Siswa</th><th>Mata Pelajaran</th><th>Guru</th><th>Hari</th><th>Jam</th><th>Ruangan</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>Siswa</th><th>Mata Pelajaran</th><th>Guru</th><th>Hari</th><th>Jam</th><th>Aksi</th></tr></thead>
                 <tbody>
                     @forelse($jadwal as $j)
                     <tr>
@@ -23,7 +23,6 @@
                         <td>{{ $j->nama_guru }}</td>
                         <td><span class="badge bg-primary">{{ $j->hari }}</span></td>
                         <td>{{ $j->jam_formatted }}</td>
-                        <td>{{ $j->ruangan ?? '-' }}</td>
                         <td>
                             <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ $j->id }}"><i class="bi bi-pencil"></i></button>
                             <form action="{{ route('admin.jadwal.delete', $j->id) }}" method="POST" id="del-{{ $j->id }}" class="d-inline">
@@ -61,7 +60,7 @@
                         <div class="col-md-4"><div class="mb-3"><label>Jam Mulai *</label><input type="time" class="form-control" name="jam_mulai" value="{{ \Carbon\Carbon::parse($j->jam_mulai)->format('H:i') }}" required></div></div>
                         <div class="col-md-4"><div class="mb-3"><label>Jam Selesai *</label><input type="time" class="form-control" name="jam_selesai" value="{{ \Carbon\Carbon::parse($j->jam_selesai)->format('H:i') }}" required></div></div>
                     </div>
-                    <div class="mb-3"><label>Ruangan</label><input type="text" class="form-control" name="ruangan" value="{{ $j->ruangan }}"></div>
+                    <!--<div class="mb-3"><label>Ruangan</label><input type="text" class="form-control" name="ruangan" value="{{ $j->ruangan }}"></div>-->
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Update</button></div>
             </form>
@@ -87,7 +86,7 @@
                         <div class="col-md-4"><div class="mb-3"><label>Jam Mulai *</label><input type="time" class="form-control" name="jam_mulai" required></div></div>
                         <div class="col-md-4"><div class="mb-3"><label>Jam Selesai *</label><input type="time" class="form-control" name="jam_selesai" required></div></div>
                     </div>
-                    <div class="mb-3"><label>Ruangan</label><input type="text" class="form-control" name="ruangan"></div>
+                    <!--<div class="mb-3"><label>Ruangan</label><input type="text" class="form-control" name="ruangan"></div>-->
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
             </form>

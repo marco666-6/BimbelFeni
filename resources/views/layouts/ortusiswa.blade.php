@@ -608,10 +608,16 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
+                                <a class="dropdown-item" href="{{ route('home') }}">
+                                    <i class="bi bi-globe"></i> Lihat Website
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item" href="{{ auth()->user()->isOrangTua() ? route('orangtua.profile') : route('siswa.profile') }}">
                                     <i class="bi bi-person-circle"></i> Profil Saya
                                 </a>
                             </li>
+                            
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form action="{{ route('logout') }}" method="POST">

@@ -964,11 +964,6 @@ class AdminController extends Controller
 
         $pengumuman = Pengumuman::create($data);
 
-        // Send notification if published
-        if ($request->status === 'published') {
-            $pengumuman->publish();
-        }
-
         return back()->with('success', 'Pengumuman berhasil ditambahkan!');
     }
 

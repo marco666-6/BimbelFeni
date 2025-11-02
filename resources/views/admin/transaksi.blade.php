@@ -51,27 +51,7 @@
                         </td>
                     </tr>
                     
-                    <div class="modal fade" id="verifyModal{{ $t->id }}" tabindex="-1">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <form action="{{ route('admin.transaksi.verifikasi', $t->id) }}" method="POST">
-                                    @csrf @method('PUT')
-                                    <div class="modal-header"><h5 class="modal-title fw-bold">Verifikasi Pembayaran</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                                    <div class="modal-body">
-                                        <div class="mb-3"><label class="form-label">Status Verifikasi *</label>
-                                            <select class="form-select" name="status_verifikasi" required>
-                                                <option value="verified">Terima (Verified)</option>
-                                                <option value="rejected">Tolak (Rejected)</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3"><label class="form-label">Catatan</label><textarea class="form-control" name="catatan_admin" rows="3"></textarea></div>
-                                        <div class="alert alert-info"><strong>Info:</strong><br>- Siswa: {{ $t->siswa->nama_lengkap }}<br>- Paket: {{ $t->paketBelajar->nama_paket }}<br>- Total: {{ $t->total_pembayaran_formatted }}</div>
-                                    </div>
-                                    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Proses</button></div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+                    
                     @empty
                     <tr><td colspan="9" class="text-center py-4 text-muted"><i class="bi bi-inbox" style="font-size: 3rem;"></i><p class="mt-2">Belum ada transaksi</p></td></tr>
                     @endforelse
@@ -80,4 +60,28 @@
         </div>
     </div>
 </div>
+
+@foreach($transaksi as $t)
+<div class="modal fade" id="verifyModal{{ $t->id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('admin.transaksi.verifikasi', $t->id) }}" method="POST">
+                @csrf @method('PUT')
+                <div class="modal-header"><h5 class="modal-title fw-bold">Verifikasi Pembayaran</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">Status Verifikasi *</label>
+                        <select class="form-select" name="status_verifikasi" required>
+                            <option value="verified">Terima (Verified)</option>
+                            <option value="rejected">Tolak (Rejected)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Catatan</label><textarea class="form-control" name="catatan_admin" rows="3"></textarea></div>
+                    <div class="alert alert-info"><strong>Info:</strong><br>- Siswa: {{ $t->siswa->nama_lengkap }}<br>- Paket: {{ $t->paketBelajar->nama_paket }}<br>- Total: {{ $t->total_pembayaran_formatted }}</div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Proses</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
 @endsection

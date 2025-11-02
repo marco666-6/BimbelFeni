@@ -92,9 +92,6 @@ class Pengumuman extends Model
             'status' => 'published',
             'tanggal_publikasi' => now(),
         ]);
-        
-        // Send notification ke users sesuai target
-        $this->sendNotificationToTarget();
     }
 
     // Send notification ke target users

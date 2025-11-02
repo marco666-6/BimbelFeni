@@ -29,6 +29,14 @@ class Transaksi extends Model
         'tanggal_transaksi' => 'datetime',
     ];
 
+    // Add this property to include accessors in JSON
+    protected $appends = [
+        'total_pembayaran_formatted',
+        'status_label',
+        'status_badge_color',
+        'bukti_pembayaran_url'
+    ];
+
     // Generate kode transaksi otomatis
     protected static function boot()
     {

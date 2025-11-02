@@ -48,6 +48,18 @@ class AuthController extends Controller
                 return back()->with('error', 'Akun Anda tidak aktif. Silakan hubungi administrator.');
             }
 
+            // Check if orangtua user has record in orang_tua table
+            if ($user->isOrangTua() && !$user->orangTua) {
+                Auth::logout();
+                return back()->with('error', 'Data orang tua belum terdaftar. Silakan hubungi administrator untuk melengkapi data Anda.');
+            }
+
+            // Check if siswa user has record in siswa table
+            if ($user->isSiswa() && !$user->siswa) {
+                Auth::logout();
+                return back()->with('error', 'Data siswa belum terdaftar. Silakan hubungi administrator untuk melengkapi data Anda.');
+            }
+
             // Log activity untuk siswa
             if ($user->isSiswa() && $user->siswa) {
                 LogActivity::logLogin($user->siswa->id);

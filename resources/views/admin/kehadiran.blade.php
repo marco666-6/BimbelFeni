@@ -18,10 +18,10 @@
                     <br><small>{{ \Carbon\Carbon::parse($tanggal)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</small>
                 </div>
             </div>
-            <div class="col-md-4 text-end">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAbsensiMassal">
+            <div class="col-md-4 text-center">
+                <!--<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAbsensiMassal">
                     <i class="bi bi-people-fill"></i> Absensi Massal
-                </button>
+                </button>-->
                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAbsensiJadwal">
                     <i class="bi bi-calendar-check-fill"></i> Absensi per Jadwal
                 </button>

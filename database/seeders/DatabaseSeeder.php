@@ -33,7 +33,7 @@ class DatabaseSeeder extends Seeder
         // Create Admin User
         $admin1 = User::create([
             'username' => 'admin1',
-            'email' => 'admin1@bimbeloriana.com',
+            'email' => 'c',
             'password' => Hash::make('admin123'),
             'role' => 'admin',
             'foto_profil' => null,

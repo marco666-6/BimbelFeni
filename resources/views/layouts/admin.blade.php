@@ -41,6 +41,7 @@
         /* Sidebar Styles */
         .sidebar { 
             min-height: 100vh;
+            height: 100vh; /* Add explicit height */
             background: var(--gradient-sidebar);
             box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
             position: fixed;
@@ -48,7 +49,10 @@
             left: 0;
             width: 280px;
             z-index: 1000;
-            overflow-y: auto;
+            overflow-y: auto; /* This was already there */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            display: flex;
+            flex-direction: column;
         }
         
         .sidebar::-webkit-scrollbar {
