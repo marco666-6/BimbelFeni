@@ -113,28 +113,31 @@ Route::middleware(['auth', 'orang_tua'])->prefix('orangtua')->name('orangtua.')-
     // Dashboard
     Route::get('/dashboard', [OrangTuaController::class, 'dashboard'])->name('dashboard');
     
-    // Monitoring Anak
-    Route::get('/anak', [OrangTuaController::class, 'anak'])->name('anak');
-    Route::get('/anak/{id}', [OrangTuaController::class, 'detailAnak'])->name('anak.detail');
-    Route::get('/anak/{id}/jadwal', [OrangTuaController::class, 'jadwalAnak'])->name('anak.jadwal');
-    Route::get('/anak/{id}/log-activity', [OrangTuaController::class, 'logActivity'])->name('anak.log-activity');
-    Route::get('/anak/{id}/rapor', [OrangTuaController::class, 'raporAnak'])->name('anak.rapor');
-    
     // Paket & Pembayaran
     Route::get('/paket-belajar', [OrangTuaController::class, 'paketBelajar'])->name('paket-belajar');
     Route::post('/paket-belajar/beli', [OrangTuaController::class, 'beliPaket'])->name('paket-belajar.beli');
     Route::get('/transaksi', [OrangTuaController::class, 'transaksi'])->name('transaksi');
     
-    // Feedback
-    Route::get('/feedback', [OrangTuaController::class, 'feedback'])->name('feedback');
-    Route::post('/feedback', [OrangTuaController::class, 'storeFeedback'])->name('feedback.store');
-    
-    // Pengumuman
-    Route::get('/pengumuman', [OrangTuaController::class, 'pengumuman'])->name('pengumuman');
-    
-    // Notifikasi
-    Route::get('/notifikasi', [OrangTuaController::class, 'notifikasi'])->name('notifikasi');
-    Route::put('/notifikasi/{id}/read', [OrangTuaController::class, 'markNotifikasiRead'])->name('notifikasi.read');
+    // Restricted routes (require active subscription)
+    Route::middleware('check.subscription')->group(function () {
+        // Monitoring Anak
+        Route::get('/anak', [OrangTuaController::class, 'anak'])->name('anak');
+        Route::get('/anak/{id}', [OrangTuaController::class, 'detailAnak'])->name('anak.detail');
+        Route::get('/anak/{id}/jadwal', [OrangTuaController::class, 'jadwalAnak'])->name('anak.jadwal');
+        Route::get('/anak/{id}/log-activity', [OrangTuaController::class, 'logActivity'])->name('anak.log-activity');
+        Route::get('/anak/{id}/rapor', [OrangTuaController::class, 'raporAnak'])->name('anak.rapor');
+        
+        // Feedback
+        Route::get('/feedback', [OrangTuaController::class, 'feedback'])->name('feedback');
+        Route::post('/feedback', [OrangTuaController::class, 'storeFeedback'])->name('feedback.store');
+        
+        // Pengumuman
+        Route::get('/pengumuman', [OrangTuaController::class, 'pengumuman'])->name('pengumuman');
+
+        // Notifikasi
+        Route::get('/notifikasi', [OrangTuaController::class, 'notifikasi'])->name('notifikasi');
+        Route::put('/notifikasi/{id}/read', [OrangTuaController::class, 'markNotifikasiRead'])->name('notifikasi.read');
+    });
     
     // Profile
     Route::get('/profile', [OrangTuaController::class, 'profile'])->name('profile');
@@ -142,9 +145,9 @@ Route::middleware(['auth', 'orang_tua'])->prefix('orangtua')->name('orangtua.')-
 });
 
 // ============ SISWA ROUTES ============
-Route::middleware(['auth', 'siswa'])->prefix('siswa')->name('siswa.')->group(function () {
+Route::middleware(['auth', 'siswa', 'check.subscription'])->prefix('siswa')->name('siswa.')->group(function () {
     // Dashboard
-    Route::get('/dashboard', [SiswaController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [SiswaController::class, 'dashboard'])->name('dashboard')->withoutMiddleware('check.subscription');
     
     // Materi & Tugas
     Route::get('/materi-tugas', [SiswaController::class, 'materiTugas'])->name('materi-tugas');
@@ -172,6 +175,6 @@ Route::middleware(['auth', 'siswa'])->prefix('siswa')->name('siswa.')->group(fun
     Route::put('/notifikasi/read-all', [SiswaController::class, 'markAllNotifikasiRead'])->name('notifikasi.read-all');
     
     // Profile
-    Route::get('/profile', [SiswaController::class, 'profile'])->name('profile');
-    Route::put('/profile', [SiswaController::class, 'updateProfile'])->name('profile.update');
+    Route::get('/profile', [SiswaController::class, 'profile'])->name('profile')->withoutMiddleware('check.subscription');
+    Route::put('/profile', [SiswaController::class, 'updateProfile'])->name('profile.update')->withoutMiddleware('check.subscription');
 });

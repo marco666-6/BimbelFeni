@@ -23,47 +23,69 @@ class SiswaController extends Controller
     public function dashboard()
     {
         $siswa = auth()->user()->siswa;
+        $hasActiveSubscription = $siswa->hasActiveSubscription();
+        $subscriptionEndDate = $siswa->subscription_end_date;
+        $remainingDays = $siswa->remaining_subscription_days;
         
-        // Statistik
-        $totalMateri = MateriTugas::materi()
-            ->where('jenjang', $siswa->jenjang)
-            ->count();
+        // Show warning if subscription ending soon
+        $showWarning = $remainingDays > 0 && $remainingDays <= 7;
         
-        $totalTugasTerkumpul = $siswa->pengumpulanTugas()->count();
-        
-        $tugasTertunda = MateriTugas::tugas()
-            ->where('jenjang', $siswa->jenjang)
-            ->aktif()
-            ->whereNotIn('id', $siswa->pengumpulanTugas()->pluck('materi_tugas_id'))
-            ->count();
-        
-        $rataNilai = $siswa->rata_nilai;
-        
-        // Jadwal hari ini
-        $hariIni = now()->locale('id')->dayName;
-        $jadwalHariIni = $siswa->jadwal()
-            ->where('hari', $hariIni)
-            ->orderBy('jam_mulai')
-            ->get();
-        
-        // Pengumuman terbaru
-        $pengumuman = Pengumuman::published()
-            ->forUser('siswa')
-            ->latest()
-            ->take(5)
-            ->get();
-        
-        // Tugas mendatang
-        $tugasMendatang = MateriTugas::tugas()
-            ->where('jenjang', $siswa->jenjang)
-            ->aktif()
-            ->whereNotIn('id', $siswa->pengumpulanTugas()->pluck('materi_tugas_id'))
-            ->orderBy('deadline')
-            ->take(5)
-            ->get();
+        // Only fetch data if has active subscription
+        if ($hasActiveSubscription) {
+            // Statistik
+            $totalMateri = MateriTugas::materi()
+                ->where('jenjang', $siswa->jenjang)
+                ->count();
+            
+            $totalTugasTerkumpul = $siswa->pengumpulanTugas()->count();
+            
+            $tugasTertunda = MateriTugas::tugas()
+                ->where('jenjang', $siswa->jenjang)
+                ->aktif()
+                ->whereNotIn('id', $siswa->pengumpulanTugas()->pluck('materi_tugas_id'))
+                ->count();
+            
+            $rataNilai = $siswa->rata_nilai;
+            
+            // Jadwal hari ini
+            $hariIni = now()->locale('id')->dayName;
+            $jadwalHariIni = $siswa->jadwal()
+                ->where('hari', $hariIni)
+                ->orderBy('jam_mulai')
+                ->get();
+            
+            // Pengumuman terbaru
+            $pengumuman = Pengumuman::published()
+                ->forUser('siswa')
+                ->latest()
+                ->take(5)
+                ->get();
+            
+            // Tugas mendatang
+            $tugasMendatang = MateriTugas::tugas()
+                ->where('jenjang', $siswa->jenjang)
+                ->aktif()
+                ->whereNotIn('id', $siswa->pengumpulanTugas()->pluck('materi_tugas_id'))
+                ->orderBy('deadline')
+                ->take(5)
+                ->get();
+        } else {
+            // Set defaults when no active subscription
+            $totalMateri = 0;
+            $totalTugasTerkumpul = 0;
+            $tugasTertunda = 0;
+            $rataNilai = 0;
+            $jadwalHariIni = collect(); // Empty collection
+            $pengumuman = collect(); // Empty collection
+            $tugasMendatang = collect(); // Empty collection
+        }
 
         return view('siswa.dashboard', compact(
             'siswa',
+            'hasActiveSubscription',
+            'subscriptionEndDate',
+            'remainingDays',
+            'showWarning',
             'totalMateri',
             'totalTugasTerkumpul',
             'tugasTertunda',

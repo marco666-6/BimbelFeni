@@ -126,4 +126,59 @@ class Siswa extends Model
         
         return $transaksiTerakhir ? $transaksiTerakhir->status_verifikasi : null;
     }
+
+    /**
+     * Check if siswa has active subscription
+     */
+    public function hasActiveSubscription()
+    {
+        $latestTransaction = $this->transaksi()
+            ->where('status_verifikasi', 'verified')
+            ->latest('tanggal_transaksi')
+            ->first();
+        
+        if (!$latestTransaction) {
+            return false;
+        }
+        
+        $paket = $latestTransaction->paketBelajar;
+        $endDate = Carbon::parse($latestTransaction->tanggal_transaksi)
+            ->addMonths($paket->durasi_bulan);
+        
+        return now()->lte($endDate);
+    }
+
+    /**
+     * Get subscription end date
+     */
+    public function getSubscriptionEndDateAttribute()
+    {
+        $latestTransaction = $this->transaksi()
+            ->where('status_verifikasi', 'verified')
+            ->latest('tanggal_transaksi')
+            ->first();
+        
+        if (!$latestTransaction) {
+            return null;
+        }
+        
+        $paket = $latestTransaction->paketBelajar;
+        return Carbon::parse($latestTransaction->tanggal_transaksi)
+            ->addMonths($paket->durasi_bulan);
+    }
+
+    /**
+     * Get remaining subscription days
+     */
+    public function getRemainingSubscriptionDaysAttribute()
+    {
+        $endDate = $this->subscription_end_date;
+        
+        if (!$endDate) {
+            return 0;
+        }
+        
+        $remaining = now()->diffInDays($endDate, false);
+        return $remaining > 0 ? $remaining : 0;
+    }
 }

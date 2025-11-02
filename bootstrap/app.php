@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'siswa' => \App\Http\Middleware\SiswaMiddleware::class,
             'orang_tua' => \App\Http\Middleware\OrangTuaMiddleware::class,
+            'check.subscription' => \App\Http\Middleware\CheckActiveSubscription::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
