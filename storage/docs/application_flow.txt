@@ -1,0 +1,835 @@
+================================================================================
+           DOKUMENTASI ALUR APLIKASI BIMBINGAN BELAJAR
+           Generated: 2026-01-11 13:22:16
+================================================================================
+
+
+================================================================================
+1. STRUKTUR FOLDER PROYEK
+================================================================================
+
+app/
+├── Http/
+│   ├── Controllers/       # Berisi semua controller (logic pemrosesan request)
+│   │   ├── HomeController.php       # Halaman publik (landing page)
+│   │   ├── AuthController.php       # Login, logout, autentikasi
+│   │   ├── AdminController.php      # Semua fungsi admin
+│   │   ├── OrangTuaController.php   # Semua fungsi orang tua
+│   │   └── SiswaController.php      # Semua fungsi siswa
+│   └── Middleware/       # Filter request sebelum masuk controller
+│       ├── AdminMiddleware.php       # Validasi akses admin
+│       ├── OrangTuaMiddleware.php    # Validasi akses orang tua
+│       ├── SiswaMiddleware.php       # Validasi akses siswa
+│       ├── CheckActiveSubscription.php # Cek langganan aktif
+│       └── RequestLogger.php         # Logging semua request
+├── Models/               # Representasi tabel database & relasi
+│   ├── User.php          # Model user (login)
+│   ├── OrangTua.php      # Model data orang tua
+│   ├── Siswa.php         # Model data siswa
+│   ├── PaketBelajar.php  # Model paket belajar
+│   ├── Transaksi.php     # Model pembayaran
+│   ├── Jadwal.php        # Model jadwal pelajaran
+│   ├── Kehadiran.php     # Model absensi
+│   ├── MateriTugas.php   # Model materi & tugas
+│   ├── PengumpulanTugas.php # Model pengumpulan tugas
+│   ├── Feedback.php      # Model feedback orang tua
+│   ├── Pengumuman.php    # Model pengumuman
+│   ├── Notifikasi.php    # Model notifikasi
+│   ├── LogActivity.php   # Model log aktivitas siswa
+│   └── Settings.php      # Model pengaturan website
+└── Helpers/
+    └── FileUploadHelper.php # Helper upload file
+
+routes/
+└── web.php               # Definisi semua route (URL mapping)
+
+resources/
+└── views/                # File tampilan (blade template)
+    ├── home/             # View halaman publik
+    ├── auth/             # View login
+    ├── admin/            # View dashboard admin
+    ├── orangtua/         # View dashboard orang tua
+    └── siswa/            # View dashboard siswa
+
+database/
+└── Database MySQL berisi 14 tabel
+
+
+================================================================================
+2. DAFTAR ROUTE (URL MAPPING)
+================================================================================
+
+
+--- PUBLIC ---
+
+GET      up                                                 -> Closure
+
+GET      /                                                  -> App\Http\Controllers\HomeController@index
+         Middleware: web, App\Http\Middleware\RequestLogger
+
+GET      tentang                                            -> App\Http\Controllers\HomeController@tentang
+         Middleware: web, App\Http\Middleware\RequestLogger
+
+GET      kontak                                             -> App\Http\Controllers\HomeController@kontak
+         Middleware: web, App\Http\Middleware\RequestLogger
+
+GET      paket                                              -> App\Http\Controllers\HomeController@paket
+         Middleware: web, App\Http\Middleware\RequestLogger
+
+GET      storage/{path}                                     -> Closure
+
+
+--- AUTH ---
+
+GET      login                                              -> App\Http\Controllers\AuthController@showLogin
+         Middleware: web, App\Http\Middleware\RequestLogger
+
+POST     login                                              -> App\Http\Controllers\AuthController@login
+         Middleware: web, App\Http\Middleware\RequestLogger
+
+POST     logout                                             -> App\Http\Controllers\AuthController@logout
+         Middleware: web, App\Http\Middleware\RequestLogger
+
+
+--- ADMIN ---
+
+GET      admin/dashboard                                    -> App\Http\Controllers\AdminController@dashboard
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/users                                        -> App\Http\Controllers\AdminController@users
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+POST     admin/users                                        -> App\Http\Controllers\AdminController@storeUser
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/users/{id}                                   -> App\Http\Controllers\AdminController@updateUser
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+DELETE   admin/users/{id}                                   -> App\Http\Controllers\AdminController@deleteUser
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/orangtua                                     -> App\Http\Controllers\AdminController@orangTua
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+POST     admin/orangtua                                     -> App\Http\Controllers\AdminController@storeOrangTua
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/orangtua/{id}                                -> App\Http\Controllers\AdminController@updateOrangTua
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+DELETE   admin/orangtua/{id}                                -> App\Http\Controllers\AdminController@deleteOrangTua
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/siswa                                        -> App\Http\Controllers\AdminController@siswa
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+POST     admin/siswa                                        -> App\Http\Controllers\AdminController@storeSiswa
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/siswa/{id}                                   -> App\Http\Controllers\AdminController@updateSiswa
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+DELETE   admin/siswa/{id}                                   -> App\Http\Controllers\AdminController@deleteSiswa
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/paket                                        -> App\Http\Controllers\AdminController@paketBelajar
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+POST     admin/paket                                        -> App\Http\Controllers\AdminController@storePaket
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/paket/{id}                                   -> App\Http\Controllers\AdminController@updatePaket
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+DELETE   admin/paket/{id}                                   -> App\Http\Controllers\AdminController@deletePaket
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/transaksi                                    -> App\Http\Controllers\AdminController@transaksi
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/transaksi/{id}/verifikasi                    -> App\Http\Controllers\AdminController@verifikasiTransaksi
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/jadwal                                       -> App\Http\Controllers\AdminController@jadwal
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+POST     admin/jadwal                                       -> App\Http\Controllers\AdminController@storeJadwal
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/jadwal/{id}                                  -> App\Http\Controllers\AdminController@updateJadwal
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+DELETE   admin/jadwal/{id}                                  -> App\Http\Controllers\AdminController@deleteJadwal
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/kehadiran                                    -> App\Http\Controllers\AdminController@kehadiran
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+POST     admin/kehadiran                                    -> App\Http\Controllers\AdminController@storeKehadiran
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/kehadiran/{id}                               -> App\Http\Controllers\AdminController@updateKehadiran
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+DELETE   admin/kehadiran/{id}                               -> App\Http\Controllers\AdminController@deleteKehadiran
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/kehadiran/{id}/data                          -> App\Http\Controllers\AdminController@getKehadiranData
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/kehadiran/{id}/update-status                 -> App\Http\Controllers\AdminController@updateStatusKehadiran
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+POST     admin/kehadiran/absensi-massal-jadwal              -> App\Http\Controllers\AdminController@absensiMassalJadwal
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+POST     admin/kehadiran/absensi-massal-semua               -> App\Http\Controllers\AdminController@absensiMassalSemua
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/laporan-kehadiran                            -> App\Http\Controllers\AdminController@laporanKehadiran
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/materi-tugas                                 -> App\Http\Controllers\AdminController@materiTugas
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+POST     admin/materi-tugas                                 -> App\Http\Controllers\AdminController@storeMateriTugas
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/materi-tugas/{id}                            -> App\Http\Controllers\AdminController@updateMateriTugas
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+DELETE   admin/materi-tugas/{id}                            -> App\Http\Controllers\AdminController@deleteMateriTugas
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/pengumpulan-tugas                            -> App\Http\Controllers\AdminController@pengumpulanTugas
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/pengumpulan-tugas/{id}/nilai                 -> App\Http\Controllers\AdminController@nilaiTugas
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/feedback                                     -> App\Http\Controllers\AdminController@feedback
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/feedback/{id}/balas                          -> App\Http\Controllers\AdminController@balasFeedback
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+DELETE   admin/feedback/{id}                                -> App\Http\Controllers\AdminController@deleteFeedback
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/pengumuman                                   -> App\Http\Controllers\AdminController@pengumuman
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+POST     admin/pengumuman                                   -> App\Http\Controllers\AdminController@storePengumuman
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/pengumuman/{id}                              -> App\Http\Controllers\AdminController@updatePengumuman
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+DELETE   admin/pengumuman/{id}                              -> App\Http\Controllers\AdminController@deletePengumuman
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/settings                                     -> App\Http\Controllers\AdminController@settings
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/settings                                     -> App\Http\Controllers\AdminController@updateSettings
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/laporan-siswa                                -> App\Http\Controllers\AdminController@laporanSiswa
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/laporan-siswa/{id}                           -> App\Http\Controllers\AdminController@detailLaporanSiswa
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+GET      admin/profile                                      -> App\Http\Controllers\AdminController@profile
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+PUT      admin/profile                                      -> App\Http\Controllers\AdminController@updateProfile
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, admin
+
+
+--- ORANG TUA ---
+
+GET      orangtua/dashboard                                 -> App\Http\Controllers\OrangTuaController@dashboard
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua
+
+GET      orangtua/paket-belajar                             -> App\Http\Controllers\OrangTuaController@paketBelajar
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua
+
+POST     orangtua/paket-belajar/beli                        -> App\Http\Controllers\OrangTuaController@beliPaket
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua
+
+GET      orangtua/transaksi                                 -> App\Http\Controllers\OrangTuaController@transaksi
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua
+
+GET      orangtua/anak                                      -> App\Http\Controllers\OrangTuaController@anak
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua, check.subscription
+
+GET      orangtua/anak/{id}                                 -> App\Http\Controllers\OrangTuaController@detailAnak
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua, check.subscription
+
+GET      orangtua/anak/{id}/jadwal                          -> App\Http\Controllers\OrangTuaController@jadwalAnak
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua, check.subscription
+
+GET      orangtua/anak/{id}/log-activity                    -> App\Http\Controllers\OrangTuaController@logActivity
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua, check.subscription
+
+GET      orangtua/anak/{id}/rapor                           -> App\Http\Controllers\OrangTuaController@raporAnak
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua, check.subscription
+
+GET      orangtua/feedback                                  -> App\Http\Controllers\OrangTuaController@feedback
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua, check.subscription
+
+POST     orangtua/feedback                                  -> App\Http\Controllers\OrangTuaController@storeFeedback
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua, check.subscription
+
+GET      orangtua/pengumuman                                -> App\Http\Controllers\OrangTuaController@pengumuman
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua, check.subscription
+
+GET      orangtua/notifikasi                                -> App\Http\Controllers\OrangTuaController@notifikasi
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua, check.subscription
+
+PUT      orangtua/notifikasi/{id}/read                      -> App\Http\Controllers\OrangTuaController@markNotifikasiRead
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua, check.subscription
+
+GET      orangtua/profile                                   -> App\Http\Controllers\OrangTuaController@profile
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua
+
+PUT      orangtua/profile                                   -> App\Http\Controllers\OrangTuaController@updateProfile
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, orang_tua
+
+
+--- SISWA ---
+
+GET      siswa/dashboard                                    -> App\Http\Controllers\SiswaController@dashboard
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+GET      siswa/materi-tugas                                 -> App\Http\Controllers\SiswaController@materiTugas
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+GET      siswa/materi-tugas/{id}                            -> App\Http\Controllers\SiswaController@detailMateriTugas
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+GET      siswa/materi-tugas/{id}/download                   -> App\Http\Controllers\SiswaController@downloadMateriTugas
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+POST     siswa/tugas/kumpulkan                              -> App\Http\Controllers\SiswaController@kumpulkanTugas
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+GET      siswa/jadwal                                       -> App\Http\Controllers\SiswaController@jadwal
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+GET      siswa/nilai                                        -> App\Http\Controllers\SiswaController@nilai
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+GET      siswa/rapor                                        -> App\Http\Controllers\SiswaController@rapor
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+GET      siswa/kehadiran                                    -> App\Http\Controllers\SiswaController@kehadiran
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+GET      siswa/pengumuman                                   -> App\Http\Controllers\SiswaController@pengumuman
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+GET      siswa/pengumuman/{id}                              -> App\Http\Controllers\SiswaController@detailPengumuman
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+GET      siswa/notifikasi                                   -> App\Http\Controllers\SiswaController@notifikasi
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+PUT      siswa/notifikasi/{id}/read                         -> App\Http\Controllers\SiswaController@markNotifikasiRead
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+PUT      siswa/notifikasi/read-all                          -> App\Http\Controllers\SiswaController@markAllNotifikasiRead
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+GET      siswa/profile                                      -> App\Http\Controllers\SiswaController@profile
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+PUT      siswa/profile                                      -> App\Http\Controllers\SiswaController@updateProfile
+         Middleware: web, App\Http\Middleware\RequestLogger, auth, siswa, check.subscription
+
+
+================================================================================
+3. CONTROLLERS & METHODS
+================================================================================
+
+
+HomeController - Halaman publik
+--------------------------------------------------------------------------------
+  • index()
+    Halaman landing page
+
+  • tentang()
+    Halaman tentang bimbel
+
+  • kontak()
+    Halaman kontak
+
+  • paket()
+    Halaman paket belajar
+
+
+AuthController - Autentikasi (login/logout)
+--------------------------------------------------------------------------------
+  • showLogin()
+    Tampilkan halaman login
+
+  • login()
+    Proses login
+
+  • logout()
+    Proses logout
+
+
+AdminController - Semua fungsi administrator
+--------------------------------------------------------------------------------
+  • dashboard()
+    Dashboard Admin
+
+  • users()
+    Kelola Users (Admin, Orang Tua, Siswa)
+
+  • storeUser()
+    Store new user
+
+  • updateUser()
+    Update user
+
+  • deleteUser()
+    Delete user
+
+  • orangTua()
+    Kelola Orang Tua Detail
+
+  • storeOrangTua()
+    Store orang tua
+
+  • updateOrangTua()
+    Update orang tua
+
+  • deleteOrangTua()
+    Delete orang tua
+
+  • siswa()
+    Kelola Siswa
+
+  • storeSiswa()
+    Store siswa
+
+  • updateSiswa()
+    Update siswa
+
+  • deleteSiswa()
+    Delete siswa
+
+  • paketBelajar()
+    Kelola Paket Belajar
+
+  • storePaket()
+    Store paket belajar
+
+  • updatePaket()
+    Update paket belajar
+
+  • deletePaket()
+    Delete paket belajar
+
+  • transaksi()
+    Kelola Transaksi
+
+  • verifikasiTransaksi()
+    Verifikasi pembayaran
+
+  • jadwal()
+    Kelola Jadwal
+
+  • storeJadwal()
+    Store jadwal
+
+  • updateJadwal()
+    Update jadwal
+
+  • deleteJadwal()
+    Delete jadwal
+
+  • kehadiran()
+    Kelola Kehadiran - dengan filter tanggal dan absensi massal
+
+  • absensiMassalJadwal()
+    Absensi Massal berdasarkan Jadwal Hari Ini
+
+  • absensiMassalSemua()
+    Absensi Massal untuk Semua Siswa (tanpa jadwal spesifik)
+
+  • storeKehadiran()
+    Store kehadiran single
+
+  • updateKehadiran()
+    Update kehadiran
+
+  • updateStatusKehadiran()
+    Update status kehadiran (quick update via AJAX)
+
+  • deleteKehadiran()
+    Delete kehadiran
+
+  • getKehadiranData()
+    Get kehadiran data for edit (AJAX)
+
+  • laporanKehadiran()
+    Export Laporan Kehadiran (periode)
+
+  • materiTugas()
+    Kelola Materi & Tugas
+
+  • storeMateriTugas()
+    Store materi/tugas
+
+  • updateMateriTugas()
+    Update materi/tugas
+
+  • deleteMateriTugas()
+    Delete materi/tugas
+
+  • pengumpulanTugas()
+    Kelola Pengumpulan Tugas
+
+  • nilaiTugas()
+    Nilai tugas siswa
+
+  • feedback()
+    Kelola Feedback
+
+  • balasFeedback()
+    Balas feedback
+
+  • deleteFeedback()
+    Delete feedback
+
+  • pengumuman()
+    Kelola Pengumuman
+
+  • storePengumuman()
+    Store pengumuman
+
+  • updatePengumuman()
+    Update pengumuman
+
+  • deletePengumuman()
+    Delete pengumuman
+
+  • settings()
+    Kelola Settings Website
+
+  • updateSettings()
+    Update settings
+
+  • laporanSiswa()
+    Laporan Siswa
+
+  • detailLaporanSiswa()
+    Detail Laporan Siswa
+
+  • profile()
+    Profil Admin
+
+  • updateProfile()
+    Update profil admin
+
+
+OrangTuaController - Semua fungsi orang tua
+--------------------------------------------------------------------------------
+  • dashboard()
+    Dashboard Orang Tua
+
+  • anak()
+    Daftar Anak
+
+  • detailAnak()
+    Detail Perkembangan Anak
+
+  • jadwalAnak()
+    Jadwal Anak
+
+  • logActivity()
+    Log Activity Anak
+
+  • raporAnak()
+    Rapor Anak
+
+  • paketBelajar()
+    Lihat Paket Belajar
+
+  • beliPaket()
+    Proses Pembelian Paket (Upload Bukti Pembayaran)
+
+  • transaksi()
+    Riwayat Transaksi
+
+  • feedback()
+    Feedback
+
+  • storeFeedback()
+    Kirim Feedback
+
+  • pengumuman()
+    Lihat Pengumuman
+
+  • notifikasi()
+    Lihat Notifikasi
+
+  • markNotifikasiRead()
+    Tandai notifikasi dibaca
+
+  • profile()
+    Profil Orang Tua
+
+  • updateProfile()
+    Update Profil
+
+
+SiswaController - Semua fungsi siswa
+--------------------------------------------------------------------------------
+  • dashboard()
+    Dashboard Siswa
+
+  • materiTugas()
+    Lihat Materi & Tugas
+
+  • detailMateriTugas()
+    Detail Materi/Tugas
+
+  • downloadMateriTugas()
+    Download Materi/Tugas
+
+  • kumpulkanTugas()
+    Kumpulkan Tugas
+
+  • jadwal()
+    Lihat Jadwal
+
+  • nilai()
+    Lihat Nilai
+
+  • rapor()
+    Rapor Siswa
+
+  • kehadiran()
+    Lihat Kehadiran
+
+  • pengumuman()
+    Lihat Pengumuman
+
+  • detailPengumuman()
+    Detail Pengumuman
+
+  • notifikasi()
+    Lihat Notifikasi
+
+  • markNotifikasiRead()
+    Tandai notifikasi dibaca
+
+  • markAllNotifikasiRead()
+    Tandai semua notifikasi dibaca
+
+  • profile()
+    Profil Siswa
+
+  • updateProfile()
+    Update Profil
+
+
+================================================================================
+4. MODELS & RELASI DATABASE
+================================================================================
+
+
+User (Tabel: users)
+--------------------------------------------------------------------------------
+  Fillable: username, email, password, role, foto_profil, status
+
+  Relasi: orangTua(), siswa(), notifikasi(), pengumumanDibuat(), tokens(), notifications()
+
+
+OrangTua (Tabel: orang_tua)
+--------------------------------------------------------------------------------
+  Fillable: user_id, nama_lengkap, no_telepon, alamat, pekerjaan
+
+  Relasi: user(), siswa(), transaksi(), feedback()
+
+
+Siswa (Tabel: siswa)
+--------------------------------------------------------------------------------
+  Fillable: user_id, orangtua_id, nama_lengkap, tanggal_lahir, jenjang, kelas
+
+  Relasi: user(), orangTua(), transaksi(), jadwal(), kehadiran(), pengumpulanTugas(), feedback(), logActivity()
+
+
+PaketBelajar (Tabel: paket_belajar)
+--------------------------------------------------------------------------------
+  Fillable: nama_paket, deskripsi, harga, durasi_bulan, jenjang, status
+
+  Relasi: transaksi()
+
+
+Transaksi (Tabel: transaksi)
+--------------------------------------------------------------------------------
+  Fillable: kode_transaksi, orangtua_id, siswa_id, paket_id, total_pembayaran, bukti_pembayaran, status_verifikasi, catatan_admin, tanggal_transaksi
+
+  Relasi: orangTua(), siswa(), paketBelajar()
+
+
+Jadwal (Tabel: jadwal)
+--------------------------------------------------------------------------------
+  Fillable: siswa_id, mata_pelajaran, nama_guru, hari, jam_mulai, jam_selesai, ruangan
+
+  Relasi: siswa(), kehadiran()
+
+
+Kehadiran (Tabel: kehadiran)
+--------------------------------------------------------------------------------
+  Fillable: jadwal_id, siswa_id, status, tanggal_pertemuan, keterangan
+
+  Relasi: jadwal(), siswa()
+
+
+MateriTugas (Tabel: materi_tugas)
+--------------------------------------------------------------------------------
+  Fillable: judul, deskripsi, tipe, mata_pelajaran, jenjang, file_path, deadline
+
+  Relasi: pengumpulanTugas()
+
+
+PengumpulanTugas (Tabel: pengumpulan_tugas)
+--------------------------------------------------------------------------------
+  Fillable: materi_tugas_id, siswa_id, file_path, tanggal_pengumpulan, nilai, feedback_guru
+
+  Relasi: materiTugas(), siswa()
+
+
+Feedback (Tabel: feedback)
+--------------------------------------------------------------------------------
+  Fillable: orangtua_id, siswa_id, isi_feedback, tanggal_feedback, status, balasan_admin
+
+  Relasi: orangTua(), siswa()
+
+
+Pengumuman (Tabel: pengumuman)
+--------------------------------------------------------------------------------
+  Fillable: judul, isi, target, tanggal_publikasi, status, created_by
+
+  Relasi: creator()
+
+
+Notifikasi (Tabel: notifikasi)
+--------------------------------------------------------------------------------
+  Fillable: user_id, judul, pesan, tipe, dibaca
+
+  Relasi: user()
+
+
+LogActivity (Tabel: log_activity)
+--------------------------------------------------------------------------------
+  Fillable: siswa_id, jenis_aktivitas, deskripsi, waktu_aktivitas, ip_address
+
+  Relasi: siswa()
+
+
+Settings (Tabel: settings)
+--------------------------------------------------------------------------------
+  Fillable: nama_website, logo, alamat, no_telepon, email, tentang, nama_bank, nomor_rekening, atas_nama
+
+
+
+================================================================================
+5. MIDDLEWARE (REQUEST FILTERS)
+================================================================================
+
+AdminMiddleware
+  • Cek apakah user login
+  • Cek apakah role = 'admin'
+  • Cek apakah status = 'aktif'
+  • Jika tidak memenuhi -> redirect dengan error
+
+OrangTuaMiddleware
+  • Cek apakah user login
+  • Cek apakah role = 'orangtua'
+  • Cek apakah status = 'aktif'
+  • Jika tidak memenuhi -> redirect dengan error
+
+SiswaMiddleware
+  • Cek apakah user login
+  • Cek apakah role = 'siswa'
+  • Cek apakah status = 'aktif'
+  • Jika tidak memenuhi -> redirect dengan error
+
+CheckActiveSubscription
+  • Cek transaksi terakhir yang verified
+  • Hitung tanggal berakhir berdasarkan durasi paket
+  • Jika sudah expired -> redirect dengan warning
+
+RequestLogger
+  • Log semua request ke file txt
+  • Catat: user, method, URL, data, response, waktu eksekusi
+  • Lokasi: storage/logs/request_tracking/
+
+
+================================================================================
+6. DATABASE TABLES & RELATIONSHIPS
+================================================================================
+
+users
+  Data login semua pengguna (admin, orangtua, siswa)
+
+orang_tua
+  Data detail orang tua
+
+siswa
+  Data detail siswa
+
+paket_belajar
+  Paket bimbingan belajar yang tersedia
+
+transaksi
+  Riwayat pembayaran & bukti transfer
+
+jadwal
+  Jadwal pelajaran siswa
+
+kehadiran
+  Absensi siswa per pertemuan
+
+materi_tugas
+  Materi pembelajaran & tugas
+
+pengumpulan_tugas
+  File tugas yang dikumpulkan siswa
+
+feedback
+  Feedback orang tua ke admin
+
+pengumuman
+  Pengumuman dari admin
+
+notifikasi
+  Notifikasi untuk user
+
+log_activity
+  Log aktivitas siswa
+
+settings
+  Pengaturan website
+
+
+RELASI UTAMA:
+  users -> orang_tua (one-to-one)
+  users -> siswa (one-to-one)
+  orang_tua -> siswa (one-to-many)
+  siswa -> jadwal (one-to-many)
+  siswa -> kehadiran (one-to-many)
+  siswa -> pengumpulan_tugas (one-to-many)
+  siswa -> transaksi (one-to-many)
+  jadwal -> kehadiran (one-to-many)
+  materi_tugas -> pengumpulan_tugas (one-to-many)
+  paket_belajar -> transaksi (one-to-many)
+
